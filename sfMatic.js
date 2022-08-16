@@ -1,6 +1,5 @@
 import conf from '@tsmx/secure-config';
 import StakeUtil from "./src/StakeUtil.js";
-process.env.NODE_ENV = '';
 const config = conf();
 
 const siteName = "stablefund.app";
