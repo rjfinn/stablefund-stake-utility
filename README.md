@@ -35,19 +35,23 @@ The config file is a JSON object.  It's actually not necessary and you can skip 
 					    "address": "your public address for wallet 1",
 					    "private": "your private key for wallet 1"
 					 },
-					 "SF2": { ... }
+					 "SF2": { 
+						... 
+					}
 				},
 		        "xfer_wallet": "public address",
 			    "leave": 2.5,
 			    "compounds_per_day": 1,
 			    "compound_min": 20,
 			    "restake_rate": 0
-        },
-        "stablefund.appBUSD": { ... },
-        "coinapi_key": "for coin API pricing",
-        "getblock_key": "for alternative provider",
-        "cmc_api_key": "for coinmarketcap pricing",
-    }
+        	},
+			"stablefund.appBUSD": { 
+				... 
+			},
+			"coinapi_key": "for coin API pricing",
+			"getblock_key": "for alternative provider",
+			"cmc_api_key": "for coinmarketcap pricing",
+		}
 
 ### Per site:
  - **wallets**: One or more wallets used to interact with the smart contract
