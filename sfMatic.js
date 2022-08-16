@@ -1,5 +1,6 @@
 import conf from '@tsmx/secure-config';
 import StakeUtil from "./src/StakeUtil.js";
+process.env.NODE_ENV = '';
 const config = conf();
 
 const siteName = "stablefund.app";
@@ -14,7 +15,9 @@ const stake = StakeUtil({
     amountToLeave:      config[siteName].leave,
     restakeRate:        config[siteName].restake_rate ? config[siteName].restake_rate : 1.0,
     abi:                abi,
-    JsonProvider:       'https://matic.getblock.io/mainnet/?api_key='+config.getblock_key,
+    JsonProvider:       'https://polygon-rpc.com/',
+    //JsonProvider:       'https://matic.getblock.io/mainnet/?api_key='+config.getblock_key,
+    //WSSProvider:        'wss://matic.getblock.io/mainnet/?api_key=' + config.getblock_key,
     gasPremium:         10,
     gasStation:         'https://gasstation-mainnet.matic.network/v2',
     gasPriority:        'fast',  // for Polygon
