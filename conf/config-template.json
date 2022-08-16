@@ -1,0 +1,34 @@
+{
+    "stablefund.app": {
+      "wallets": {
+        "SF1": {
+          "name": "SF 1",
+          "address": "your public address for wallet 1",
+          "private": "your private key for wallet 1"
+        },
+        "SF2": {
+          "name": "SF 2",
+          "address": "your public address for wallet 2",
+          "private": "your private key for wallet 2"
+        }
+      },
+      "xfer_wallet": "destination public wallet (i.e. wallet 2 or a wallet on an exchange)",
+      "leave": 2.5,
+      "compounds_per_day": 1,
+      "compound_min": 20,
+      "restake_rate": 0
+    },
+    "stablefund.appBUSD": {
+      "wallets": {
+      },
+      "xfer_wallet": "",
+      "leave": 1.5,
+      "compounds_per_day": 1,
+      "compound_min": 0,
+      "restake_rate": 1
+    },
+    "coinapi_key": "for coin API pricing",
+    "getblock_key": "for alternative provider",
+    "cmc_api_key": "for coinmarketcap pricing",
+  }
+  
