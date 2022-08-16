@@ -95,3 +95,9 @@ Each instance of StakeUtil is instantiated with a few parameters, some required.
 - **checkBalanceRetryAttempts**: How many times to check the balance waiting for transactions to clear
 - **CMCAPIKey**: API key for CoinMarketCap, used to get the current price
 
+## Considerations
+
+If you like this script and you're feeling generous, here's my tip jar address: `0x5e3aE649f3354584A0feA76f83C0315494d12B7e` (ETH, MATIC, BSC/BNB).
+
+**Note**: This is unaudited code and is not necessarily production ready.  Test before using.
+
