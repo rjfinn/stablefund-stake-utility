@@ -1,3 +1,4 @@
+
 # StableFund Stake Utility
 
 ## Background
@@ -94,4 +95,44 @@ Each instance of StakeUtil is instantiated with a few parameters, some required.
 - **checkBalanceRetrySeconds**: How many seconds to wait before checking the balance while waiting for transactions to clear
 - **checkBalanceRetryAttempts**: How many times to check the balance waiting for transactions to clear
 - **CMCAPIKey**: API key for CoinMarketCap, used to get the current price
+
+### Commands
+To run the script, using commands:
+
+    const  args = process.argv.slice(2);
+    stake.run(args).
+This assumes that you're calling your script like this:
+   
+
+     node sfMatic.js arg1 arg2
+
+The list of available commands:
+
+ - **bal**: List the quick balance of the contact, wallets, and pending rewards.
+	 - arg (optional): the label of one wallet to check
+ - **full**: List the full balance of the above, including capital, capital eligible for withdrawl, daily rate, and next compound value
+	 - arg (optional): the label of one wallet to check
+ - **deplist**: List the full balance as above, but also list every active deposit
+	 - arg (optional): the label of one wallet to check
+ - **dep**: Perform deposits of all configured wallets
+	 - arg (optional): the label of one wallet to use only
+ - **claim**: Claim all rewards from all configured wallets
+	 - arg (optional): the label of one wallet to use
+ - **withdraw**: Withdraw all eligible deposits from all configured wallets
+	 - arg (optional): the label of one wallet
+	 - arg2 (optional, unless wallet specific): the deposit ID to be withdrawn, get from *deplist*.
+ - **transfer**: Transfer all funds from one wallet to another
+	 - arg: The label of the wallet to transfer from
+	 - arg2: The label of the wallet to transfer to
+ - **comp**: Compound all rewards back into the wallet they came from
+ - **autocomp**: Automatically compound, running as a daemon, per the configured compounds per day
+ - **con**: Consolidate rewards from wallets to the last configured wallet, useful when getting the balance up on a new wallet
+ - **autocon**: Automatically consolidate as with autocompound.
+
+## Considerations
+
+If you like this script and you're feeling generous, here's my tip jar address: `0x5e3aE649f3354584A0feA76f83C0315494d12B7e` (ETH, MATIC, BSC/BNB).
+
+**Note**: This is unaudited code and is not necessarily production ready.  Test before using.
+
 
