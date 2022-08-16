@@ -18,9 +18,9 @@ If you're unfamiliar with Stablefund.app, see https://stablefund.app/ for more i
 		  - Then, use this command:
 `secure-config-tool create -p "address,private,xfer_wallet,getblock_key,coinapi_key,cmc_api_key" conf/config-raw.json > conf/config.json`
 		 - Finally, discard or move `config-raw.json`. 
- 4. Use one of the built-in scripts for a site or customize your own
-		`import StakeUtil from "./src/StakeUtil.js";
-		const stake = StakeUtil({ .... });`
+ 4. Use one of the built-in scripts for a site or customize your own <br/>
+		`import StakeUtil from "./src/StakeUtil.js";`<br/>
+		`const stake = StakeUtil({ .... });`
 
 ## config.json Structure
 
