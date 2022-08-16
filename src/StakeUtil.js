@@ -5,66 +5,66 @@ import got from 'got';
 import moment from 'moment';
 import readline from 'readline';
 
-export default function StakeUtil(options) {
+export default function StakeUtil(params) {
     const expectedDailyReturn = 0.015; // rate in decimal
     const withdrawEligibleAge = 28; // days
 
-    const walletConfig = options.walletConfig ? options.walletConfig : {};
+    const walletConfig = params.walletConfig ? params.walletConfig : {};
     if (Object.keys(walletConfig).length === 0) {
         throw 'Must specify 1 or more wallets in "walletConfig" ({label: {name: name, address: address, private: private key}, label2: {...}})';
     }
-    if (!options.siteName) {
-        throw 'Must specify "siteName" in options';
+    if (!params.siteName) {
+        throw 'Must specify "siteName" in params';
     }
-    const xferWallet = options.xferWallet ? options.xferWallet : undefined;
-    const siteName = options.siteName;
-    if (!options.symbol) {
-        throw 'Must specify "symbol" in options';
+    const xferWallet = params.xferWallet ? params.xferWallet : undefined;
+    const siteName = params.siteName ? params.siteName : 'StableFund';
+    if (!params.symbol) {
+        throw 'Must specify "symbol" in params';
     }
-    const symbol = options.symbol;
-    if (!options.contractAddress) {
-        throw 'Must specify "contractAddress" in options';
+    const symbol = params.symbol;
+    if (!params.contractAddress) {
+        throw 'Must specify "contractAddress" in params';
     }
-    const contractAddress = options.contractAddress;
-    if (!options.abi) {
-        throw 'Must specify "abi" in options';
+    const contractAddress = params.contractAddress;
+    if (!params.abi) {
+        throw 'Must specify "abi" in params';
     }
-    const abi = options.abi;
-    let JsonProvider = options.JsonProvider ? new ethers.providers.JsonRpcProvider(options.JsonProvider) : undefined;
-    let WSSProvider = options.WSSProvider ? new ethers.providers.WebSocketProvider(options.WSSProvider) : undefined;
+    const abi = params.abi;
+    let JsonProvider = params.JsonProvider ? new ethers.providers.JsonRpcProvider(params.JsonProvider) : undefined;
+    let WSSProvider = params.WSSProvider ? new ethers.providers.WebSocketProvider(params.WSSProvider) : undefined;
     let provider = undefined;
     if (WSSProvider) {
         provider = WSSProvider;
     } else if (JsonProvider) {
         provider = JsonProvider;
     } else {
-        throw 'No provider specified in options, specify either JsonProvider or WSSProvider address';
+        throw 'No provider specified in params, specify either JsonProvider or WSSProvider address';
     }
     const contract = new ethers.Contract(contractAddress, abi, provider);
-    const tokenAddress = options.tokenAddress ? options.tokenAddress : undefined;
+    const tokenAddress = params.tokenAddress ? params.tokenAddress : undefined;
     const tokenContract = tokenAddress ? new ethers.Contract(tokenAddress, abi, provider) : undefined;
-    const scanURL = options.scanURL ? options.scanURL : undefined;
-    const gasStation = options.gasStation ? options.gasStation : undefined;
-    const gasPriority = options.gasPriority ? options.gasPriority : 'safeLow';  // safeLow, standard, fast for Polygon
-    let gasPremium = options.gasPremium ? options.gasPremium : 0.0;
-    // TODO : allow options in gwei, parse it
-    let gasLimit = options.gasLimit ? ethers.BigNumber.from(options.gasLimit) : ethers.BigNumber.from(8000000);
+    const scanURL = params.scanURL ? params.scanURL : undefined;
+    const gasStation = params.gasStation ? params.gasStation : undefined;
+    const gasPriority = params.gasPriority ? params.gasPriority : 'safeLow';  // safeLow, standard, fast for Polygon
+    let gasPremium = params.gasPremium ? params.gasPremium : 0.0;
+    // TODO : allow params in gwei, parse it
+    let gasLimit = params.gasLimit ? ethers.BigNumber.from(params.gasLimit) : ethers.BigNumber.from(8000000);
     // for Polygon network
-    let maxFeePerGas = options.maxFeePerGas ? ethers.BigNumber.from(options.maxFeePerGas) : ethers.BigNumber.from(20000000000);
-    let maxPriorityFeePerGas = options.maxPriorityFeePerGas ? ethers.BigNumber.from(options.maxPriorityFeePerGas) : ethers.BigNumber.from(20000000000);
+    let maxFeePerGas = params.maxFeePerGas ? ethers.BigNumber.from(params.maxFeePerGas) : ethers.BigNumber.from(20000000000);
+    let maxPriorityFeePerGas = params.maxPriorityFeePerGas ? ethers.BigNumber.from(params.maxPriorityFeePerGas) : ethers.BigNumber.from(20000000000);
     // for BSC network
-    let gasPrice = options.gasPrice ? ethers.BigNumber.from(options.gasPrice) : ethers.BigNumber.from(20000000);
-    const momentFormat = options.momentFormat ? options.momentFormat : 'MMM-DD-YYYY hh:mm:ss A +UTC';
-    const compoundsPerDay = options.compoundsPerDay ? options.compoundsPerDay : 1;
+    let gasPrice = params.gasPrice ? ethers.BigNumber.from(params.gasPrice) : ethers.BigNumber.from(20000000);
+    const momentFormat = params.momentFormat ? params.momentFormat : 'MMM-DD-YYYY hh:mm:ss A +UTC';
+    const compoundsPerDay = params.compoundsPerDay ? params.compoundsPerDay : 1;
     const compoundInterval = 24 / compoundsPerDay;
-    const amountToLeave = options.amountToLeave ? options.amountToLeave : 2.0;
-    const minDeposit = options.minDeposit ? options.minDeposit : 10;
+    const amountToLeave = params.amountToLeave ? params.amountToLeave : 2.0;
+    const minDeposit = params.minDeposit ? params.minDeposit : 10;
 
-    const checkBalanceRetrySeconds = options.checkBalanceRetrySeconds ? options.checkBalanceRetrySeconds : 5;
-    const checkBalanceRetryAttempts = options.checkBalanceRetryAttempts ? options.checkBalanceRetryAttempts : 100;
-    const CMCAPIKey = options.CMCAPIKey ? options.CMCAPIKey : undefined;
-    const moralisKey = options.moralisKey ? options.moralisKey : undefined;
-    const coinAPIKey = options.coinAPIKey ? options.coinAPIKey : undefined;
+    const checkBalanceRetrySeconds = params.checkBalanceRetrySeconds ? params.checkBalanceRetrySeconds : 5;
+    const checkBalanceRetryAttempts = params.checkBalanceRetryAttempts ? params.checkBalanceRetryAttempts : 100;
+    const CMCAPIKey = params.CMCAPIKey ? params.CMCAPIKey : undefined;
+    const moralisKey = params.moralisKey ? params.moralisKey : undefined;
+    const coinAPIKey = params.coinAPIKey ? params.coinAPIKey : undefined;
 
     let price = 0.0;
 

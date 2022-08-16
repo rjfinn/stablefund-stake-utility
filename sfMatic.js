@@ -20,8 +20,8 @@ const stake = StakeUtil({
     gasPriority:        'fast',  // for Polygon
     compoundsPerDay:    config[siteName].compounds_per_day ? config[siteName].compounds_per_day : 1,
     compundMin:         config[siteName].compound_min ? config[siteName].compound_min : 0.0,
-    checkBalanceRetrySeconds:   1,
-    checkBalanceRetryAttempts:  1000,
+    checkBalanceRetrySeconds:   5,
+    checkBalanceRetryAttempts:  100,
     CMCAPIKey:          config.cmc_api_key
 });
 
