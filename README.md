@@ -131,7 +131,7 @@ The list of available commands:
 
 ## Considerations
 
-If you like this script and you're feeling generous, here's my tip jar address: `0x5e3aE649f3354584A0feA76f83C0315494d12B7e` (ETH, MATIC, BSC/BNB).
+If you like this script and you're feeling generous, here's my tip jar address: `0xb9d73Fb5Ed03494CB11c4809704a7fc1f8ebB6A8` (ETH, MATIC, BSC/BNB).
 
 **Note**: This is unaudited code and is not necessarily production ready.  Test before using.
 
