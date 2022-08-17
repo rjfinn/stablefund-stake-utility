@@ -51,7 +51,7 @@ export default function StakeUtil(params) {
     // for Polygon network
     let maxFeePerGas = params.maxFeePerGas ? ethers.utils.parseUnits(params.maxFeePerGas) : ethers.utils.parseUnits("30","gwei");
     let maxPriorityFeePerGas = params.maxPriorityFeePerGas ? ethers.utils.parseUnits(params.maxPriorityFeePerGas) : ethers.utils.parseUnits("40","gwei");
-    const maxGasFeeForAuto = params.maxGasFeeForAuto ? ethers.utils.parseUnits(params.maxGasFeeForAuto.toString(),'gwei') : ethers.utils.parseUnits("80","gwei");
+    const maxGasFeeForAuto = params.maxGasFeeForAuto ? ethers.utils.parseUnits(params.maxGasFeeForAuto.toString(),'gwei') : ethers.utils.parseUnits("200","gwei");
     // for BSC network
     let gasPrice = params.gasPrice ? ethers.BigNumber.from(params.gasPrice) : ethers.BigNumber.from(20000000);
     const momentFormat = params.momentFormat ? params.momentFormat : 'MMM-DD-YYYY hh:mm:ss A +UTC';

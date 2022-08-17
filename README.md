@@ -98,7 +98,7 @@ Each instance of StakeUtil is instantiated with a few parameters, some required.
 - **gasPriority**: Used with Polygon, which set of fees to use (safeLow, standard, fast)
 - **maxFeePerGas**: Manually set, used with Polygon (in gwei), see https://polygonscan.com/gastracker
 - **maxPriorityFeePerGas**: Manually set, used with Polygon (in gwei)
-- **maxGasFeeForAuto**: When auto-compounding or consolidating, do not transact if maxFeePerGas higher than this amount (Polygon)
+- **maxGasFeeForAuto**: When auto-compounding or consolidating, do not transact if maxFeePerGas higher than this amount in gwei (Polygon)
 - **gasLimit**: Manually set gas limit for write actions on the smart contract or transfers (in wei)
 - **momentFormat**: Used to format time stamps
 - **compoundsPerDay**: How many time to compound per day when in auto-compound or auto-consolidate mode
