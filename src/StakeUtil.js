@@ -47,19 +47,20 @@ export default function StakeUtil(params) {
     const gasStation = params.gasStation ? params.gasStation : undefined;
     const gasPriority = params.gasPriority ? params.gasPriority : 'safeLow';  // safeLow, standard, fast for Polygon
     let gasPremium = params.gasPremium ? params.gasPremium : 0.0;
-    // TODO : allow params in gwei, parse it
     let gasLimit = params.gasLimit ? ethers.BigNumber.from(params.gasLimit) : ethers.BigNumber.from(8000000);
     // for Polygon network
-    let maxFeePerGas = params.maxFeePerGas ? ethers.BigNumber.from(params.maxFeePerGas) : ethers.BigNumber.from(20000000000);
-    let maxPriorityFeePerGas = params.maxPriorityFeePerGas ? ethers.BigNumber.from(params.maxPriorityFeePerGas) : ethers.BigNumber.from(20000000000);
+    let maxFeePerGas = params.maxFeePerGas ? ethers.utils.parseUnits(params.maxFeePerGas) : ethers.utils.parseUnits("30","gwei");
+    let maxPriorityFeePerGas = params.maxPriorityFeePerGas ? ethers.utils.parseUnits(params.maxPriorityFeePerGas) : ethers.utils.parseUnits("40","gwei");
+    const maxGasFeeForAuto = params.maxGasFeeForAuto ? ethers.utils.parseUnits(params.maxGasFeeForAuto.toString(),'gwei') : ethers.utils.parseUnits("80","gwei");
     // for BSC network
     let gasPrice = params.gasPrice ? ethers.BigNumber.from(params.gasPrice) : ethers.BigNumber.from(20000000);
     const momentFormat = params.momentFormat ? params.momentFormat : 'MMM-DD-YYYY hh:mm:ss A +UTC';
     const compoundsPerDay = params.compoundsPerDay ? params.compoundsPerDay : 1;
+    const compoundMin = params.compoundMin ? params.compoundMin : 0.0;
     const compoundInterval = 24 / compoundsPerDay;
-    const amountToLeave = params.amountToLeave ? params.amountToLeave : 2.0;
-    const minDeposit = params.minDeposit ? params.minDeposit : 10;
-
+    const amountToLeave = params.amountToLeave ? params.amountToLeave : 2.0;  // should be non-zero or transactions won't go through
+    const restakeRate = params.hasOwnProperty('restakeRate') ? params.restakeRate : 1.0;
+    const minDeposit = params.hasOwnProperty('minDeposit') ? params.minDeposit : 10;
     const checkBalanceRetrySeconds = params.checkBalanceRetrySeconds ? params.checkBalanceRetrySeconds : 5;
     const checkBalanceRetryAttempts = params.checkBalanceRetryAttempts ? params.checkBalanceRetryAttempts : 100;
     const CMCAPIKey = params.CMCAPIKey ? params.CMCAPIKey : undefined;
@@ -71,14 +72,13 @@ export default function StakeUtil(params) {
     const hoursToMS = (hrs) => {
         return hrs * 60 * 60 * 1000;
     }
+    const pollingInterval = hoursToMS(compoundInterval);
 
     const sleep = async (ms) => {
         return new Promise((resolve) => {
             setTimeout(resolve, ms);
         });
     }
-
-    const pollingInterval = hoursToMS(compoundInterval);
 
     // CoinMarketCap price
     const setPrice = async (_symbol = undefined, convert = 'USD') => {
@@ -446,20 +446,22 @@ export default function StakeUtil(params) {
             // console.log('balance',balance);
             // console.log('preBalance',preBalance);
             // console.log('xferAmount',xferAmount);
+            // console.log(balance > (preBalance - xferAmount))
             if (balance > (preBalance - xferAmount)) {
                 console.log('Error with deposit');
                 const errTxn = await provider.getTransaction(tx.hash);
                 try {
-                    let code = await provider.call(errTxn, errTxn.blockNumber);
-                    console.log(code);
+                    console.log(errTxn);
+                    // let code = await provider.call(errTxn, errTxn.blockNumber);
+                    // console.log(code);
                 } catch (err) {
                     console.log(err);
                     console.log(err.data.toString());
                 }
-            } else if (count <= checkBalanceRetryAttempts || balance < (preBalance + amount)) {
+            } else {
                 console.log('Deposited:', xferAmount, symbol);
                 if (scanURL) {
-                    console.log(`scan: ${scanURL}${tx.hash}`);
+                    console.log(`Scan: ${scanURL}${tx.hash}`);
                 }
                 
                 //console.log('TX Fee (Gas):', ethers.utils.formatEther(tx.gasLimit * tx.gasPrice), symbol, '\n');
@@ -645,13 +647,105 @@ export default function StakeUtil(params) {
         }
     }
 
+    // Compounding
+    const compoundWallet = async (key) => {
+        const wallet = new ethers.Wallet(key, provider);
+        const signedContract = contract.connect(wallet);
+    
+        console.log('Compound wallet:', wallet.address);
+    
+        const rawRewards = await contract.getAllClaimableReward(wallet.address);
+        //console.log('rawRewards',rawRewards);
+        let rewards = Number(parseFloat(ethers.utils.formatEther(rawRewards)));
+        let balance = 0;
+        //console.log('rewards',rewards);
+        if (rewards - amountToLeave >= compoundMin) {
+            const preBalance = await getBalance(wallet.address);
+            //console.log('prebalance',preBalance);
+            const claimed = await claimRewardsByWallet(wallet, signedContract, rewards);
+            //console.log('after claiming rewards',claimed);
+    
+            if (claimed) {
+                // wait for the rewards to show up in the wallet
+                let count = 0;
+                do {
+                    await sleep(checkBalanceRetrySeconds * 1000);
+                    balance = await getBalance(wallet.address);
+                    console.log('Balance currently:', balance);
+                    count += 1;
+                } while (count <= checkBalanceRetryAttempts && balance < (preBalance + rewards - amountToLeave));
+    
+                if (balance >= (preBalance + rewards - amountToLeave)) {
+                    let depAmount = (Math.floor(balance) * restakeRate) - amountToLeave;
+                    if (depAmount >= minDeposit) {
+                        await deposit(wallet, signedContract, depAmount);
+                    }
+    
+                    if (restakeRate < 1) {
+                        await transfer(wallet, xferWallet, Math.floor(balance) * (1 - restakeRate) - amountToLeave);
+                    }
+                } else {
+                    console.log('Timed out.');
+                    return;
+                }
+            } else {
+                console.log('Reward claim of', Number(rewards.toFixed(2)), 'failed.');
+            }
+        } else {
+            console.log('Rewards of', Number(rewards.toFixed(2)), 'too low for compounding at this time');
+            balance = await getBalance(wallet.address);
+            if (wallet.address.toLowerCase() == xferWallet.toLowerCase() && (balance - amountToLeave) >= compoundMin) {
+                console.log('\t...but existing balance can be deposited');
+                await deposit(wallet, signedContract, balance - amountToLeave);
+            }
+        }
+    }
+    
+    const compoundWallets = async () => {
+        console.log('Compound all wallets for', siteName);
+        for await (const [key, value] of Object.entries(walletConfig)) {
+            console.log('\n',key);
+            await compoundWallet(value.private);
+        }
+    }
+    
+    const autoCompound = async (consolidate = false) => {
+        console.log('Start autocompounding every', compoundInterval, 'hours');
+        setIntervalAsync(async () => { await autoCompoundDriver(consolidate) }, Number(pollingInterval));
+    }
+    
+    const autoCompoundDriver = async (consolidate = false) => {
+        console.log('\nCompouding at', moment().format(momentFormat));
+    
+        try {
+            await setPrice();
+            await setGasFee();
+            if(maxFeePerGas.gt(maxGasFeeForAuto)) {
+                console.log('Gas fees currently too high');
+                return;
+            } else {
+                await compoundWallets();
+                if (consolidate) {
+                    const walletKeys = Object.keys(walletConfig);
+                    const walletIndex = walletKeys[walletKeys.length - 1];
+                    console.log('\nConsolodiating rewards into', walletConfig[walletIndex].name);
+                    await depositByKey(walletConfig[walletIndex].private);
+                }
+            }
+        } catch (err) {
+            console.log(err);
+        }
+    }
+    
+    const consolidate = async () => {
+        await autoCompoundDriver(true);
+    }
+
     // Evaluate arguments and run functions
     const run = async (args) => {
         let daemon = false;
         await setPrice();
         await setGasFee();
-
-
 
         // assumes first arg is "node" and second is this file
         const myArgs = args.slice(0);
@@ -763,6 +857,7 @@ export default function StakeUtil(params) {
         setPrice,
         getPrice,
         setGasFee,
+        getDepositState,
         getDeposits,
         transfer,
         walletTransfer,
@@ -780,6 +875,10 @@ export default function StakeUtil(params) {
         withdrawCapitalByLabel,
         withdrawCapitalByWallet,
         withdrawCapitalByDeposit,
+        compoundWallet,
+        compoundWallets,
+        autoCompound,
+        consolidate,
         run
     }
 }

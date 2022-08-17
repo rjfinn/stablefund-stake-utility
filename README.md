@@ -25,7 +25,7 @@ If you're unfamiliar with Stablefund.app, see https://stablefund.app/ for more i
 
 ## config.json Structure
 
-The config file is a JSON object.  It's actually not necessary and you can skip down to Usage if you want to simply hard code these values into the StakeUtil module when you instantiate it.
+The config file is a JSON object.  It's actually not necessary and you can skip down to <a href="#Usage">Usage</a> if you want to simply hard code these values into the StakeUtil module when you instantiate it.
 
         {
 		    "stablefund.app": {  // site name
@@ -80,6 +80,12 @@ Each instance of StakeUtil is instantiated with a few parameters, some required.
 - **contractAddress**: Public address of the smart contract
 - **abi**: ABI object for smart contract
 - **JsonProvider** OR **WSSProvider**: Full URL of either the JSON RPC provider or the WebSockets provider
+	- JSON: https://polygon-rpc.com/  
+	- JSON: https://matic.getblock.io/mainnet/?api_key=...
+	- WebSockets: wss://matic.getblock.io/mainnet/?api_key=...
+	- JSON: https://bsc-dataseed.binance.org/
+	- JSON: https://bsc.getblock.io/mainnet/?api_key=...
+	- WebSockets: wss://bsc.getblock.io/mainnet/?api_key=...
 
 ### Optional parameters:
 - **xferWallet**: Where to send rewards or withdrawals to
@@ -90,9 +96,10 @@ Each instance of StakeUtil is instantiated with a few parameters, some required.
 	- https://gasstation-mainnet.matic.network/v2
 	- https://owlracle.info/bsc/gas?apikey=...
 - **gasPriority**: Used with Polygon, which set of fees to use (safeLow, standard, fast)
-- **maxFeePerGas**: Manually set, used with Polygon
-- **maxPriorityFeePerGas**: Manually set, used with Polygon
-- **gasLimit**: Manually set gas limit for write actions on the smart contract or transfers
+- **maxFeePerGas**: Manually set, used with Polygon (in gwei), see https://polygonscan.com/gastracker
+- **maxPriorityFeePerGas**: Manually set, used with Polygon (in gwei)
+- **maxGasFeeForAuto**: When auto-compounding or consolidating, do not transact if maxFeePerGas higher than this amount (Polygon)
+- **gasLimit**: Manually set gas limit for write actions on the smart contract or transfers (in wei)
 - **momentFormat**: Used to format time stamps
 - **compoundsPerDay**: How many time to compound per day when in auto-compound or auto-consolidate mode
 - **minDeposit**: Minimum amount in a deposit to claim
@@ -124,13 +131,13 @@ The list of available commands:
 	 - arg (optional): the label of one wallet to use
  - **withdraw**: Withdraw all eligible deposits from all configured wallets
 	 - arg (optional): the label of one wallet
-	 - arg2 (optional, unless wallet specific): the deposit ID to be withdrawn, get from *deplist*.
+	 - arg2 (optional, unless wallet specified): the deposit ID to be withdrawn, get from *deplist*.
  - **transfer**: Transfer all funds from one wallet to another
 	 - arg: The label of the wallet to transfer from
 	 - arg2: The label of the wallet to transfer to
  - **comp**: Compound all rewards back into the wallet they came from
  - **autocomp**: Automatically compound, running as a daemon, per the configured compounds per day
- - **con**: Consolidate rewards from wallets to the last configured wallet, useful when getting the balance up on a new wallet
+ - **con**: Consolidate rewards from the other wallets to the last configured wallet, useful when getting the balance up on a new wallet, set xferWallet to the address of the last wallet and restakeRate to 0 when using this mode.
  - **autocon**: Automatically consolidate as with autocompound.
 
 ## Considerations

@@ -1,4 +1,5 @@
 .env
+.vscode/
 conf/config.json
 conf/config-raw.json
 
