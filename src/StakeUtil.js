@@ -80,6 +80,16 @@ export default function StakeUtil(params) {
         });
     }
 
+    const setIntervalAsync = (fn, ms) => {
+        //console.log('setInterval',ms);
+        if (ms < 0) {
+            ms = -ms;
+        }
+        fn().then(() => {
+            setTimeout(() => setIntervalAsync(fn, ms), ms);
+        });
+    };
+
     // CoinMarketCap price
     const setPrice = async (_symbol = undefined, convert = 'USD') => {
         if (!_symbol) {
@@ -417,7 +427,7 @@ export default function StakeUtil(params) {
             xferAmount = amount;
         }
 
-        console.log('Transfer amount:', xferAmount);
+        console.log('Deposit amount:', xferAmount);
 
         if (xferAmount > minDeposit) {
             const depositValue = String(ethers.utils.parseEther(xferAmount.toString()));
@@ -671,8 +681,8 @@ export default function StakeUtil(params) {
                 do {
                     await sleep(checkBalanceRetrySeconds * 1000);
                     balance = await getBalance(wallet.address);
-                    console.log('Balance currently:', balance);
                     count += 1;
+                    console.log(count,'Balance currently:', balance);
                 } while (count <= checkBalanceRetryAttempts && balance < (preBalance + rewards - amountToLeave));
     
                 if (balance >= (preBalance + rewards - amountToLeave)) {
