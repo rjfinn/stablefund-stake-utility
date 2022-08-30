@@ -77,3 +77,6 @@ typings/
 # FuseBox cache
 .fusebox/
 
+src/autoStablefund.js
+src/autoStablefundBUSD.js
+src/newAddress.cjs
