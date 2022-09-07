@@ -9,17 +9,18 @@ If you're unfamiliar with Stablefund.app, see https://stablefund.app/ for more i
 
 ## Installation
 
- 1. Clone the repo and cd into it
- 2. `npm install`
- 3. Create conf/config.json
+ 1. Install [NodeJS](https://nodejs.org/en/download/)
+ 2. Clone the repo and cd into it
+ 3. `npm install`
+ 4. Create conf/config.json
 	  - For plain text config, simply copy `config-template.json` to `config.json` and fill it out.
 	  - For secure config using [@tsnx/secure-config](https://www.npmjs.com/package/@tsmx/secure-config)
 		  - Copy the template to `config-raw.json` and fill it out
 		  - Export the CONFIG_ENCRYPTION_KEY
 		  - Then, use this command:
-`secure-config-tool create -p "address,private,xfer_wallet,getblock_key,coinapi_key,cmc_api_key" conf/config-raw.json > conf/config.json`
+`secure-config-tool create -p "address,private,xfer_wallet,getblock_key,coinapi_key,cmc_api_key,owlracle_key" conf/config-raw.json > conf/config.json`
 		 - Finally, discard or move `config-raw.json`. 
- 4. Use one of the built-in scripts for a site or customize your own <br/>
+ 5. Use one of the built-in scripts for a site or customize your own <br/>
 		`import StakeUtil from "./src/StakeUtil.js";`<br/>
 		`const stake = StakeUtil({ .... });`
 
