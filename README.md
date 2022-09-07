@@ -116,7 +116,7 @@ To run the script, using commands:
 This assumes that you're calling your script like this:
    
 
-     node sfMatic.js arg1 arg2
+     node sfMatic.js command [arg1] [arg2]
 
 The list of available commands:
 
