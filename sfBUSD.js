@@ -13,6 +13,7 @@ const stake = StakeUtil({
     symbol:             "BUSD",
     contractAddress:    "0xfBbc24CA5518898fAe0d8455Cb265FaAA66157C9",
     tokenAddress:       '0xe9e7CEA3DedcA5984780Bafc599bD69ADd087D56',
+    approveEveryTxn:    false,
     walletConfig:       config[siteName].wallets,
     xferWallet:         config[siteName].xfer_wallet,
     amountToLeave:      config[siteName].leave,

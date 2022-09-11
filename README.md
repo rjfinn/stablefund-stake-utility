@@ -92,6 +92,7 @@ Each instance of StakeUtil is instantiated with a few parameters, some required.
 - **xferWallet**: Where to send rewards or withdrawals to
 - **amountToLeave**: Amount to leave in the wallet when depositing or transferring
 - **tokenAddress**: Public address for the token used with funds that use a token rather than the native coin for a blockchain, i.e. BUSD
+- **approveEveryTxn**: true/false (default), whether to require a specific approval for each token transfer for BUSD.  If set to false, then you must use the **approve** command (see below) before any deposits
 - **scanURL**: URL of the block explorer for this blockchain transactions
 - **gasStation**: URL for grabbing estimated gas fees at the current time
 	- https://gasstation-mainnet.matic.network/v2
@@ -140,6 +141,8 @@ The list of available commands:
  - **autocomp**: Automatically compound, running as a daemon, per the configured compounds per day
  - **con**: Consolidate rewards from the other wallets to the last configured wallet, useful when getting the balance up on a new wallet, set xferWallet to the address of the last wallet and restakeRate to 0 when using this mode.
  - **autocon**: Automatically consolidate as with autocompound.
+ - **approve**: For BUSD, preapprove token transfers.
+	 - arg: amount to approve or "max" for the maximum amount (effectively unlimited)
 
 ## Considerations
 
