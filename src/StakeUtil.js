@@ -1,9 +1,11 @@
 "use strict";
 
-import { BigNumber, ethers } from 'ethers';
+import { BigNumber, ethers, utils } from 'ethers';
 import got from 'got';
 import moment from 'moment';
+//import { config } from 'process';
 import readline from 'readline';
+import { abi20 } from "./abi/bep20.js";
 
 export default function StakeUtil(params) {
     const expectedDailyReturn = 0.015; // rate in decimal
@@ -11,13 +13,22 @@ export default function StakeUtil(params) {
 
     const walletConfig = params.walletConfig ? params.walletConfig : {};
     if (Object.keys(walletConfig).length === 0) {
-        throw 'Must specify 1 or more wallets in "walletConfig" ({label: {name: name, address: address, private: private key}, label2: {...}})';
+        throw 'Must specify 1 or more wallets in "walletConfig" ({index: {name: name, address: address, private: private key}, index2: {...}})';
+    }
+    for (const [key, value] of Object.entries(walletConfig)) {
+        console.log(`${key}: ${value.name}, ${value.address}`);
     }
     if (!params.siteName) {
         throw 'Must specify "siteName" in params';
     }
     const xferWallet = params.xferWallet ? params.xferWallet : undefined;
     const siteName = params.siteName ? params.siteName : 'StableFund';
+
+    if (!params.blockchain) {
+        throw 'Must specifcy a "blockchain" in params';
+    }
+    const blockchain = params.blockchain;
+
     if (!params.symbol) {
         throw 'Must specify "symbol" in params';
     }
@@ -42,16 +53,16 @@ export default function StakeUtil(params) {
     }
     const contract = new ethers.Contract(contractAddress, abi, provider);
     const tokenAddress = params.tokenAddress ? params.tokenAddress : undefined;
-    const tokenContract = tokenAddress ? new ethers.Contract(tokenAddress, abi, provider) : undefined;
+    const tokenContract = tokenAddress ? new ethers.Contract(tokenAddress, abi20, provider) : undefined;
     const scanURL = params.scanURL ? params.scanURL : undefined;
-    const gasStation = params.gasStation ? params.gasStation : undefined;
+    let gasStation = params.gasStation ? params.gasStation : undefined;
     const gasPriority = params.gasPriority ? params.gasPriority : 'safeLow';  // safeLow, standard, fast for Polygon
     let gasPremium = params.gasPremium ? params.gasPremium : 0.0;
     let gasLimit = params.gasLimit ? ethers.BigNumber.from(params.gasLimit) : ethers.BigNumber.from(8000000);
     // for Polygon network
-    let maxFeePerGas = params.maxFeePerGas ? ethers.utils.parseUnits(params.maxFeePerGas) : ethers.utils.parseUnits("30","gwei");
-    let maxPriorityFeePerGas = params.maxPriorityFeePerGas ? ethers.utils.parseUnits(params.maxPriorityFeePerGas) : ethers.utils.parseUnits("40","gwei");
-    const maxGasFeeForAuto = params.maxGasFeeForAuto ? ethers.utils.parseUnits(params.maxGasFeeForAuto.toString(),'gwei') : ethers.utils.parseUnits("200","gwei");
+    let maxFeePerGas = params.maxFeePerGas ? ethers.utils.parseUnits(params.maxFeePerGas) : ethers.utils.parseUnits("30", "gwei");
+    let maxPriorityFeePerGas = params.maxPriorityFeePerGas ? ethers.utils.parseUnits(params.maxPriorityFeePerGas) : ethers.utils.parseUnits("40", "gwei");
+    const maxGasFeeForAuto = params.maxGasFeeForAuto ? ethers.utils.parseUnits(params.maxGasFeeForAuto.toString(), 'gwei') : ethers.utils.parseUnits("200", "gwei");
     // for BSC network
     let gasPrice = params.gasPrice ? ethers.BigNumber.from(params.gasPrice) : ethers.BigNumber.from(20000000);
     const momentFormat = params.momentFormat ? params.momentFormat : 'MMM-DD-YYYY hh:mm:ss A +UTC';
@@ -66,6 +77,7 @@ export default function StakeUtil(params) {
     const CMCAPIKey = params.CMCAPIKey ? params.CMCAPIKey : undefined;
     const moralisKey = params.moralisKey ? params.moralisKey : undefined;
     const coinAPIKey = params.coinAPIKey ? params.coinAPIKey : undefined;
+    const approveEveryTxn = params.approveEveryTxn ? params.approveEveryTxn : false;
 
     let price = 0.0;
 
@@ -110,7 +122,7 @@ export default function StakeUtil(params) {
                         }
                     }
                 ).json();
-                console.log("Current", _symbol, "price:", `\$${response.data[0].quote['USD'].price.toFixed(4)}`);
+                console.log("Current", _symbol, "price:", `\$${response.data[0].quote['USD'].price.toFixed(2)}`);
                 price = Number(response.data[0].quote['USD'].price);
                 return price;
             } catch (err) {
@@ -121,10 +133,60 @@ export default function StakeUtil(params) {
     }
     const getPrice = () => { return price; }
 
+    const normNetwork = () => {
+        switch (blockchain.toLowerCase()) {
+            case "polygon":
+            case "matic":
+                return "polygon";
+                break;
+            case "bsc":
+            case "bnb":
+            case "busd":
+            case "binance":
+                return "bsc";
+                break;
+            default:
+                return "";
+                break;
+        }
+    }
 
     // avoid underpriced transaction by getting current gas prices
     // for replanting and harvesting transactions
     const setGasFee = async () => {
+        switch (normNetwork()) {
+            case "polygon": 
+                await setGasFeePolygon();
+                break;
+            case "bsc":
+                await setGasFeeOwlracle();
+                break;
+        }
+    }
+
+    const setGasFeeOwlracle = async () => {
+        try {
+            gasPrice = await provider.getGasPrice();
+            //console.log('Initial gas price:', gasPrice.toString());
+            const data = await got(gasStation).json();
+
+            let gasPriceB = ethers.utils.parseUnits(data.speeds[2].gasPrice.toString(), 'gwei');
+
+            if (gasPriceB.gt(gasPrice)) {
+                gasPrice = gasPriceB;
+                console.log('Use gas station value:', gasPrice.toString());
+            }
+            if (gasPremium != 0) {
+                let premium = ethers.BigNumber.from(gasPremium + 100);
+                gasPrice = gasPrice.mul(premium).div(ethers.BigNumber.from(100));
+                console.log('Add premium, now:', gasPrice.toString());
+            }
+        } catch (err) {
+            console.log("Error getting gas fee", err);
+        }
+    }
+
+    const setGasFeePolygon = async () => {
         try {
             if (gasStation) {
                 // let blockNum = await provider.getBlockNumber();
@@ -156,6 +218,27 @@ export default function StakeUtil(params) {
         } catch (err) {
             console.log("Error getting gas fee", err);
         }
+    }
+
+    const txnPrice = (limit = undefined) => {
+        let options = {};
+        if(limit) {
+            options.gasLimit = limit;
+        } else {
+            options.gasLimit = gasLimit;
+        }
+        switch (normNetwork()) {
+            case "polygon": 
+                options.maxPriorityFeePerGas = maxPriorityFeePerGas;
+                options.maxFeePerGas = maxFeePerGas;
+                break;
+            case "bsc":
+                options.gasPrice = gasPrice;
+                break;
+            default:
+                throw new Error("No blockchain network set");
+        }
+        return options;
     }
 
     // Read balances
@@ -233,19 +316,28 @@ export default function StakeUtil(params) {
     }
 
     const getBalance = async (address) => {
-        const rawBalance = await provider.getBalance(address);
+        let rawBalance = undefined;
+        if (tokenContract) {
+            rawBalance = await tokenContract.balanceOf(address);
+        } else {
+            rawBalance = await provider.getBalance(address);
+        }
         const balance = Number(parseFloat(ethers.utils.formatEther(rawBalance)).toFixed(5));
         return balance;
     }
 
-    const balances = async (label = undefined) => {
+    const numberWithCommas = (num) => {
+        return num.toFixed(2).toString().replace(/\B(?=(\d{3})+(?!\d))/g, ',');
+    }
+
+    const balances = async (index = undefined) => {
         const contractBalance = await getBalance(contractAddress);
         console.log('Contract balance: ', Number(contractBalance.toFixed(2)),
-            `(\$${(contractBalance * price).toFixed(2)})`);
+            `(\$${numberWithCommas(contractBalance * price)})`);
 
         let totalRewards = 0.0;
         for await (const [key, value] of Object.entries(walletConfig)) {
-            if (label !== undefined && walletConfig[label] && walletConfig[label].address !== value.address) {
+            if (index !== undefined && walletConfig[index] && walletConfig[index].address !== value.address) {
                 continue;
             }
 
@@ -266,16 +358,16 @@ export default function StakeUtil(params) {
         return;
     }
 
-    const fullBalances = async (label = undefined, showDeposits = false) => {
+    const fullBalances = async (index = undefined, showDeposits = false) => {
         const contractBalance = await getBalance(contractAddress);
         console.log('Contract balance: ', Number(contractBalance.toFixed(2)),
-            `(\$${(contractBalance * price).toFixed(2)})`);
+            `(\$${numberWithCommas(contractBalance * price)})`);
 
         let totalCapital = 0.0;
         let totalRewards = 0.0;
         let totalEligible = 0.0;
         for await (const [key, value] of Object.entries(walletConfig)) {
-            if (label && walletConfig[label] && walletConfig[label].address !== value.address) {
+            if (index && walletConfig[index] && walletConfig[index].address !== value.address) {
                 continue;
             }
             let balance = await getBalance(value.address);
@@ -297,6 +389,7 @@ export default function StakeUtil(params) {
                     eligible += element.amount;
                 }
             });
+            console.log('Number of deposts:',deposits.length);
             console.log('Capital:', Number(capital.toFixed(2)),
                 `(\$${(capital * price).toFixed(2)})`);
             console.log('Withdraw eligible:', Number(eligible.toFixed(2)),
@@ -341,17 +434,24 @@ export default function StakeUtil(params) {
     }
 
     // Transfer funds
-    const walletTransfer = async (fromLabel, toLabel) => {
-        const fromWallet = new ethers.Wallet(walletConfig[fromLabel].private, provider);
-        //const toWallet = new ethers.Wallet(walletConfig[toLabel].private, provider);
-        const rawBalance = await provider.getBalance(fromWallet.address);
-        const myBalance = Number(parseFloat(ethers.utils.formatEther(rawBalance)).toFixed(3));
+    const walletTransfer = async (fromIndex, toIndex) => {
+        const fromWallet = new ethers.Wallet(walletConfig[fromIndex].private, provider);
+        let toAddress = undefined;
+        if(walletConfig[toIndex]) {
+            toAddress = walletConfig[toIndex].address;
+        } else {
+            toAddress = toIndex;
+        }
+        //const toWallet = new ethers.Wallet(walletConfig[toIndex].private, provider);
+        //const rawBalance = await provider.getBalance(fromWallet.address);
+        //const myBalance = Number(parseFloat(ethers.utils.formatEther(rawBalance)).toFixed(3));
+        const myBalance = await getBalance(fromWallet.address)
 
         const xferAmount = Math.floor(myBalance) - amountToLeave;
 
         console.log('Wallet transfer of:', xferAmount);
 
-        await transfer(fromWallet, walletConfig[toLabel].address, xferAmount);
+        await transfer(fromWallet, toAddress, xferAmount);
     }
 
     const transfer = async (wallet, recipient, amount) => {
@@ -364,15 +464,24 @@ export default function StakeUtil(params) {
                 console.log('Transfer from:', fromAddress, 'to', toAddress);
                 const preBalance = await getBalance(toAddress);
                 const walletSigner = wallet.connect(provider);
-                const tx = await walletSigner.sendTransaction({
-                    from: fromAddress,
-                    to: toAddress,
-                    value: String(ethers.utils.parseEther(amount.toString())),
-                    gasLimit: gasLimit,
-                    maxPriorityFeePerGas: maxPriorityFeePerGas,
-                    maxFeePerGas: maxFeePerGas
-                    //gasPrice: gasPrice
-                });
+                let signedToken = undefined;
+                if(tokenContract) {
+                    signedToken = tokenContract.connect(wallet);
+                }
+
+                let options = txnPrice();
+                
+                let tx = undefined;
+                const xferAmount = String(ethers.utils.parseEther(amount.toString()));
+                if(signedToken) {
+                    tx = await signedToken.transfer(toAddress, xferAmount, options);
+                } else {
+                    options.from = fromAddress;
+                    options.to = toAddress;
+                    options.value = xferAmount;
+                    tx = await walletSigner.sendTransaction(options);
+                }
+
                 console.log('TX Hash:', tx.hash);
 
                 let balance = 0.0;
@@ -399,9 +508,35 @@ export default function StakeUtil(params) {
     }
 
     // Perform deposits
+    async function approveByIndex(index, amount) {
+        const key = walletConfig[index].private;
+        const wallet = new ethers.Wallet(key, provider);
+        const signedToken = tokenContract.connect(wallet);
+        await approve(signedToken, amount);
+    }
+
+    const approve = async (signedToken, amount) => {
+        if (signedToken) {
+            await setGasFee();
+            let parsedAmount = undefined;
+            if (amount == 'max' || amount == 'unlimited') {
+                parsedAmount = '0xffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffff';
+            } else {
+                parsedAmount = ethers.utils.parseEther(amount);
+            }
+            const approval = await signedToken.approve(contractAddress, parsedAmount, {
+                gasPrice: gasPrice,
+                gasLimit: gasLimit
+            });
+            console.log('Approved transfer of', amount, symbol);
+            console.log(`chainScan: ${chainScan}${approval.hash}`);
+            await sleep(1000);
+        }
+    }
+
     const doAllDeposits = async () => {
         console.log('Deposit funds from all wallets for', siteName);
-        for await (const [key, value] of Object.entries(walletsConfig)) {
+        for await (const [key, value] of Object.entries(walletConfig)) {
             await depositByKey(value.private);
         }
     }
@@ -410,18 +545,22 @@ export default function StakeUtil(params) {
         console.log(key);
         const wallet = new ethers.Wallet(key, provider);
         const signedContract = contract.connect(wallet);
-        await deposit(wallet, signedContract);
+        let signedToken = undefined;
+        if(tokenContract) {
+            signedToken = tokenContract.connect(wallet);
+        }
+        await deposit(wallet, signedContract, 0, signedToken);
     }
 
-    const deposit = async (wallet, signedContract, amount = 0.0) => {
+    const deposit = async (wallet, signedContract, amount = 0.0, signedToken = undefined) => {
         console.log('\nDeposit from:', wallet.address);
 
         let xferAmount = 0.0;
-        if (amount <= 0.0) {
-            let rawBalance = await provider.getBalance(wallet.address);
-            let myBalance = Number(parseFloat(ethers.utils.formatEther(rawBalance)).toFixed(3));
-            console.log('Wallet balance:', myBalance);
 
+        let myBalance = await getBalance(wallet.address);
+        console.log('Wallet balance:', myBalance);
+        
+        if (amount <= 0.0) {
             xferAmount = Math.floor(myBalance) - amountToLeave;
         } else {
             xferAmount = amount;
@@ -433,15 +572,22 @@ export default function StakeUtil(params) {
             const depositValue = String(ethers.utils.parseEther(xferAmount.toString()));
             //const estimatedGas = await signedContract.estimateGas.deposit({ value: depositValue });
 
-            const preBalance = await getBalance(wallet.address);
+            if(approveEveryTxn) {
+                await approve(signedToken, xferAmount);
+            }
 
-            const tx = await signedContract.deposit({
-                value: depositValue,
-                //gasLimit: Math.max(gasLimit, estimatedGas),
-                gasLimit: gasLimit,
-                maxPriorityFeePerGas: maxPriorityFeePerGas,
-                maxFeePerGas: maxFeePerGas
-            });
+            const preBalance = myBalance;
+
+            let options = txnPrice();
+            let tx = undefined;
+            if(tokenContract) {
+                // the BUSD contract takes the deposit amount as a parameter
+                tx = await signedContract.deposit(depositValue, options);
+            } else {
+                // the native token (MATIC and BNB) contracts take the amount value in the msg/options object
+                options.value = depositValue;
+                tx = await signedContract.deposit(options);
+            }
             console.log('TX Hash:', tx.hash);
 
             let balance = 0.0;
@@ -450,7 +596,7 @@ export default function StakeUtil(params) {
                 await sleep(checkBalanceRetrySeconds * 1000);
                 balance = await getBalance(wallet.address);
                 count += 1;
-                console.log(count, 'Destination balance currently:', balance);
+                console.log(count, 'Wallet balance currently:', balance);
             } while (balance == preBalance && count <= checkBalanceRetryAttempts);
 
             // console.log('balance',balance);
@@ -458,7 +604,7 @@ export default function StakeUtil(params) {
             // console.log('xferAmount',xferAmount);
             // console.log(balance > (preBalance - xferAmount))
             if (balance > (preBalance - xferAmount)) {
-                console.log('Error with deposit');
+                console.log('Possible error with deposit');
                 const errTxn = await provider.getTransaction(tx.hash);
                 try {
                     console.log(errTxn);
@@ -473,7 +619,7 @@ export default function StakeUtil(params) {
                 if (scanURL) {
                     console.log(`Scan: ${scanURL}${tx.hash}`);
                 }
-                
+
                 //console.log('TX Fee (Gas):', ethers.utils.formatEther(tx.gasLimit * tx.gasPrice), symbol, '\n');
             }
         } else {
@@ -494,32 +640,49 @@ export default function StakeUtil(params) {
 
     const claimRewardsByWallet = async (wallet, signedContract, rewards = undefined) => {
         try {
+            console.log('\nClaim rewards for ',wallet.address);
             if (!rewards) {
                 const rawRewards = await contract.getAllClaimableReward(wallet.address);
                 rewards = Number(parseFloat(ethers.utils.formatEther(rawRewards)));
             }
 
+            const preBalance = await getBalance(wallet.address);
             //console.log('claim',rewards.toString());
+            if(rewards < compoundMin) {
+                console.log(`Rewards too low to claim for now: ${rewards} vs. min. required of ${compoundMin}`);
+                return 0;
+            }
             const estimatedGas = await signedContract.estimateGas.claimAllReward();
 
-            const tx = await signedContract.claimAllReward({
-                gasLimit: Math.max(gasLimit, estimatedGas),
-                maxPriorityFeePerGas: maxPriorityFeePerGas,
-                maxFeePerGas: maxFeePerGas
-                //gasPrice: gasPrice
-            });
+            let options = txnPrice(estimatedGas.mul(12).div(10));
+            
+            const tx = await signedContract.claimAllReward(options);
             //console.log(tx);
             console.log('TX Hash:', tx.hash);
+
+            let balance = 0.0;
+            let count = 0;
+            do {
+                await sleep(checkBalanceRetrySeconds * 1000);
+                balance = await getBalance(wallet.address);
+                count += 1;
+                console.log(count, 'Wallet balance currently:', balance);
+            } while (balance == preBalance && count <= checkBalanceRetryAttempts);
 
             console.log('Claimed:', rewards, symbol);
             if (scanURL) {
                 console.log(`scan: ${scanURL}${tx.hash}`);
             }
-            
+
             //console.log('TX Fee (Gas):', ethers.utils.formatEther(tx.gasLimit * tx.gasPrice), symbol);
-            console.log('TX maxPriorityFeePerGas:', ethers.utils.formatUnits(tx.maxPriorityFeePerGas, 'gwei'));
-            console.log('TX maxFeePerGas:', ethers.utils.formatUnits(tx.maxFeePerGas, 'gwei'));
+            //console.log('TX maxPriorityFeePerGas:', ethers.utils.formatUnits(tx.maxPriorityFeePerGas, 'gwei'));
+            //console.log('TX maxFeePerGas:', ethers.utils.formatUnits(tx.maxFeePerGas, 'gwei'));
             console.log('');
+
+            // if (wallet.address.toLowerCase() != xferWallet.toLowerCase() && rewards > amountToLeave) {
+            //     let balance = await getBalance(wallet.address);
+            //     await transfer(wallet, xferWallet, balance - amountToLeave);
+            // }
 
             return rewards;
         } catch (err) {
@@ -560,29 +723,35 @@ export default function StakeUtil(params) {
             }
         })();
 
-        //console.log(config[siteName].wallets);
-        for await (const [key, value] of Object.entries(walletConfig)) {
-            capital += await withdrawCapitalByKey(value.private);
+        if(confirm) {
+            for await (const [key, value] of Object.entries(walletConfig)) {
+                capital += await withdrawCapitalByKey(value.private);
+            }
+            console.log('Total withdrawn (including rewards):',
+                Number(capital.toFixed(2)),
+                `(\$${(capital * price).toFixed(2)})\n`);
         }
-        console.log('Total withdrawn (including rewards):',
-            Number(capital.toFixed(2)),
-            `(\$${(capital * price).toFixed(2)})\n`);
     }
 
-    const withdrawCapitalByLabel = async (label) => {
-        let key = walletConfig[label].private;
+    const withdrawCapitalByIndex = async (index) => {
+        let key = walletConfig[index].private;
         return withdrawCapitalByKey(key);
     }
 
     const withdrawCapitalByKey = async (key) => {
         const wallet = new ethers.Wallet(key, provider);
         const signedContract = contract.connect(wallet);
-        const capital = await withdrawByWallet(wallet, signedContract);
+        //const signedContract = new ethers.Contract(contractAddress, abi, watchSigner);
+        let signedToken = undefined;
+        if(tokenContract) {
+            signedToken = tokenContract.connect(wallet);
+        }
+        const capital = await withdrawByWallet(wallet, signedContract, signedToken);
 
         return capital;
     }
 
-    const withdrawCapitalByWallet = async (wallet, signedContract) => {
+    const withdrawCapitalByWallet = async (wallet, signedContract, signedToken = undefined) => {
         let capital = 0;
         const deposits = await getDeposits(wallet.address);
 
@@ -590,7 +759,7 @@ export default function StakeUtil(params) {
         for (deposit of deposits) {
             if (deposit.withdrawEligible) {
                 console.log('Withdraw deposit ID', deposit.id, ':', deposit.amount, symbol);
-                capital += await withdrawByDeposit_call(wallet, signedContract, deposit.id);
+                capital += await withdrawByDeposit_call(wallet, signedContract, deposit.id, signedToken);
             }
         }
         console.log('Withdrawn from wallet (including rewards):',
@@ -603,30 +772,32 @@ export default function StakeUtil(params) {
     const withdrawCapitalByDeposit = async (key, depositID) => {
         let wallet = new ethers.Wallet(key, provider);
         let signedContract = contract.connect(wallet);
+        let signedToken = tokenContract.connect(wallet);
 
         console.log('Withdraw deposit', depositID, 'from', wallet.address);
-        let amount = await withdrawByDeposit_call(wallet, signedContract, depositID);
+        let amount = await withdrawByDeposit_call(wallet, signedContract, depositID, signedToken);
         return amount;
     }
 
-    const withdrawByDeposit_call = async (wallet, signedContract, depositID) => {
+    const withdrawByDeposit_call = async (wallet, signedContract, depositID, signedToken = undefined) => {
         try {
             let deposit = await contract.depositState(depositID.toString());
             // TODO: deposit itself vs depositID, check age
             let amount = Number(ethers.utils.formatEther(deposit.depositAmount));
-            let rawReward = await contract.getClaimableReward(depositID.toString());
+            let rawReward = 0;
+            if(tokenContract) {
+                rawReward = await contract.getAllClaimableReward(wallet.address);
+            } else {
+                rawReward = await contract.getClaimableReward(depositID.toString());
+            }
             let reward = Number(ethers.utils.formatEther(rawReward));
             let total = amount + reward;
             console.log('Withdrawing deposit of', amount, 'and reward of', reward);
             const preBalance = await getBalance(wallet.address);
             let balance = 0.0;
 
-            const tx = await signedContract.withdrawCapital(depositID, {
-                gasLimit: gasLimit,
-                maxPriorityFeePerGas: maxPriorityFeePerGas,
-                maxFeePerGas: maxFeePerGas
-                // gasPrice: gasPrice,
-            });
+            let options = txnPrice();
+            const tx = await signedContract.withdrawCapital(depositID, options);
             console.log('TX Hash:', tx.hash);
 
             // wait for the rewards to show up in the wallet
@@ -645,9 +816,9 @@ export default function StakeUtil(params) {
                 }
                 //console.log('TX Fee (Gas):', ethers.utils.formatEther(tx.gasLimit * tx.gasPrice), symbol, '\n');
 
-                if (xferWallet && xferWallet != wallet.address) {
-                    await transfer(wallet, xferWallet, balance - amountToLeave);
-                }
+                // if (xferWallet && xferWallet != wallet.address) {
+                //     await transfer(wallet, xferWallet, balance - amountToLeave);
+                // }
             }
 
             return amount;
@@ -661,9 +832,13 @@ export default function StakeUtil(params) {
     const compoundWallet = async (key) => {
         const wallet = new ethers.Wallet(key, provider);
         const signedContract = contract.connect(wallet);
-    
+        let signedToken = undefined;
+        if(tokenContract) {
+            signedToken = tokenContract.connect(wallet);
+        }
+
         console.log('Compound wallet:', wallet.address);
-    
+
         const rawRewards = await contract.getAllClaimableReward(wallet.address);
         //console.log('rawRewards',rawRewards);
         let rewards = Number(parseFloat(ethers.utils.formatEther(rawRewards)));
@@ -674,7 +849,7 @@ export default function StakeUtil(params) {
             //console.log('prebalance',preBalance);
             const claimed = await claimRewardsByWallet(wallet, signedContract, rewards);
             //console.log('after claiming rewards',claimed);
-    
+
             if (claimed) {
                 // wait for the rewards to show up in the wallet
                 let count = 0;
@@ -682,15 +857,15 @@ export default function StakeUtil(params) {
                     await sleep(checkBalanceRetrySeconds * 1000);
                     balance = await getBalance(wallet.address);
                     count += 1;
-                    console.log(count,'Balance currently:', balance);
+                    console.log(count, 'Balance currently:', balance);
                 } while (count <= checkBalanceRetryAttempts && balance < (preBalance + rewards - amountToLeave));
-    
+
                 if (balance >= (preBalance + rewards - amountToLeave)) {
                     let depAmount = (Math.floor(balance) * restakeRate) - amountToLeave;
                     if (depAmount >= minDeposit) {
-                        await deposit(wallet, signedContract, depAmount);
+                        await deposit(wallet, signedContract, depAmount, signedToken);
                     }
-    
+
                     if (restakeRate < 1) {
                         await transfer(wallet, xferWallet, Math.floor(balance) * (1 - restakeRate) - amountToLeave);
                     }
@@ -710,27 +885,27 @@ export default function StakeUtil(params) {
             }
         }
     }
-    
+
     const compoundWallets = async () => {
         console.log('Compound all wallets for', siteName);
         for await (const [key, value] of Object.entries(walletConfig)) {
-            console.log('\n',key);
+            console.log('\n', key);
             await compoundWallet(value.private);
         }
     }
-    
+
     const autoCompound = async (consolidate = false) => {
         console.log('Start autocompounding every', compoundInterval, 'hours');
         setIntervalAsync(async () => { await autoCompoundDriver(consolidate) }, Number(pollingInterval));
     }
-    
+
     const autoCompoundDriver = async (consolidate = false) => {
         console.log('\nCompouding at', moment().format(momentFormat));
-    
+
         try {
             await setPrice();
             await setGasFee();
-            if(maxFeePerGas.gt(maxGasFeeForAuto)) {
+            if (maxFeePerGas.gt(maxGasFeeForAuto)) {
                 console.log('Gas fees currently too high');
                 return;
             } else {
@@ -746,7 +921,7 @@ export default function StakeUtil(params) {
             console.log(err);
         }
     }
-    
+
     const consolidate = async () => {
         await autoCompoundDriver(true);
     }
@@ -813,12 +988,15 @@ export default function StakeUtil(params) {
                     daemon = true;
                     await autoCompound(true);
                     break;
+                case 'approve':
+                case 'app':
+                    await approveByIndex(myArgs[1], myArgs[2]);
                 case 'dep':
                 case 'deposit':
                     if (myArgs[1]) {
                         await depositByKey(walletConfig[myArgs[1]].private)
                     } else {
-                        await deposits();
+                        await doAllDeposits();
                     }
                     break;
                 case 'fulldeposits':
@@ -867,6 +1045,7 @@ export default function StakeUtil(params) {
         setPrice,
         getPrice,
         setGasFee,
+        approve,
         getDepositState,
         getDeposits,
         transfer,
@@ -882,7 +1061,7 @@ export default function StakeUtil(params) {
         claimAllRewards,
         withdrawCapital,
         withdrawCapitalByKey,
-        withdrawCapitalByLabel,
+        withdrawCapitalByIndex,
         withdrawCapitalByWallet,
         withdrawCapitalByDeposit,
         compoundWallet,

@@ -2,7 +2,10 @@
   "name": "stablefund-stake-utility",
   "version": "1.0.0",
   "description": "Utility for interacting with the Stablefund.app contracts",
-  "main": "index.js",
+  "main": "sfMatic.js",
+  "bin": {
+    "execute": "sfMatic.js"
+  },
   "type": "module",
   "scripts": {},
   "author": "Richard Finn",

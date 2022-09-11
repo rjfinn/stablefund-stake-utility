@@ -16,7 +16,7 @@
       "leave": 2.5,
       "compounds_per_day": 1,
       "compound_min": 20,
-      "restake_rate": 0
+      "restake_rate": 1
     },
     "stablefund.appBUSD": {
       "wallets": {
@@ -24,11 +24,21 @@
       "xfer_wallet": "",
       "leave": 1.5,
       "compounds_per_day": 1,
-      "compound_min": 0,
+      "compound_min": 10,
+      "restake_rate": 1
+    },
+    "stablefund.appBNB": {
+      "wallets": {
+      },
+      "xfer_wallet": "",
+      "leave": 1.0,
+      "compounds_per_day": 1,
+      "compound_min": 5,
       "restake_rate": 1
     },
     "coinapi_key": "for coin API pricing",
     "getblock_key": "for alternative provider",
     "cmc_api_key": "for coinmarketcap pricing",
+    "owlracle_key": "for owlracle BSC gas station"
   }
   
