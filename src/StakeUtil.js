@@ -391,7 +391,7 @@ export default function StakeUtil(params) {
                     eligible += element.amount;
                 }
             });
-            console.log(`Number of depoists, active/total: ${deposits.length}/${depositCounts[value.address]}`);
+            console.log(`Number of deposits, active/total: ${deposits.length}/${depositCounts[value.address]}`);
             console.log('Capital:', Number(capital.toFixed(2)),
                 `(\$${(capital * price).toFixed(2)})`);
             console.log('Withdraw eligible:', Number(eligible.toFixed(2)),
