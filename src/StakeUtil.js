@@ -605,7 +605,7 @@ export default function StakeUtil(params) {
             // console.log('preBalance',preBalance);
             // console.log('xferAmount',xferAmount);
             // console.log(balance > (preBalance - xferAmount))
-            if (balance > (preBalance - xferAmount)) {
+            if (count > checkBalanceRetryAttempts) {
                 console.log('Possible error with deposit');
                 const errTxn = await provider.getTransaction(tx.hash);
                 try {
