@@ -144,6 +144,24 @@ The list of available commands:
  - **approve**: For BUSD, preapprove token transfers.
 	 - arg: amount to approve or "max" for the maximum amount (effectively unlimited)
 
+## FAQ
+
+- Why does this script need my private key?
+	- In order to interact with the smart contract, transactions need to be signed with your private key.
+	- You can secure your private key using the [@tsnx/secure-config](https://www.npmjs.com/package/@tsmx/secure-config) tool.
+- Where should I run it to be the most secure?
+	- You could run this script on a secured cloud compute instance (i.e. at AWS or Azure).  
+	- I personally run the script on a [Raspberry Pi](https://www.raspberrypi.org/) not attached to my other computers. This means my private keys are not on my laptop or desktop computers.
+- Could I use my hardware wallet (i.e. Ledger)?
+	- No.
+	- Those require you to manually approve each transaction.  So, autocompounding does not fit into the paradign of using a hardware wallet.
+- What's a good autocompounding strategy?
+	- Ask around.
+	- Common strategies are once per day, twice per day, or three times per day (once every 8 hours).
+	- Compounding requires at least 2 transactions: claim rewards and create a new deposit.  Each transaction uses gas fees, though these tend to be small.
+	- Compounding too often could cost more in fees than you receive in extra rewards, it also creates many tiny deposits which slow down the script and increase transactions fees in the future as processing your rewards means looping through many more deposits.
+	- Compounding too infrequently reduces the effective APR.
+
 ## Considerations
 
 If you like this script and you're feeling generous, here's my tip jar address: `0xb9d73Fb5Ed03494CB11c4809704a7fc1f8ebB6A8` (ETH, MATIC, BSC/BNB).

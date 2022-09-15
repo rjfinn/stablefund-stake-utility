@@ -1,4 +1,4 @@
-#!/usr/sbin/node
+#!/usr/local/bin/node
 
 import conf from '@tsmx/secure-config';
 import StakeUtil from "./src/StakeUtil.js";
