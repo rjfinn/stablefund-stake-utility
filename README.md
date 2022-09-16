@@ -2,7 +2,7 @@
 # StableFund Stake Utility
 
 ## Background
-I like to write code and experiment with DeFi, Web3, and other crypto themes.  
+I like to write code and experiment with DeFi, Web3, and other crypto themes.  I also like to automate things that I normally need to manually take care of.
 
 If you're unfamiliar with Stablefund.app, see https://stablefund.app/ for more info.  I created a messy version of this script from a different project, but kept adding to it and even finding myself sharing it to help others.
 
@@ -14,13 +14,17 @@ If you're unfamiliar with Stablefund.app, see https://stablefund.app/ for more i
  3. `npm install`
  4. Create conf/config.json
 	  - For plain text config, simply copy `config-template.json` to `config.json` and fill it out.
-	  - For secure config using [@tsnx/secure-config](https://www.npmjs.com/package/@tsmx/secure-config)
+	  - **OPTIONAL**: For secure config using [@tsnx/secure-config](https://www.npmjs.com/package/@tsmx/secure-config)
 		  - Copy the template to `config-raw.json` and fill it out
 		  - Export the CONFIG_ENCRYPTION_KEY
 		  - Then, use this command:
 `secure-config-tool create -p "address,private,xfer_wallet,getblock_key,coinapi_key,cmc_api_key,owlracle_key" conf/config-raw.json > conf/config.json`
-		 - Finally, discard or move `config-raw.json`. 
- 5. Use one of the built-in scripts for a site or customize your own <br/>
+		 - Finally, discard or move `config-raw.json`.
+ 5. Use one of the built-in scripts for a site:
+ 	- node `sfMatic.js <command>` for Matic
+	- node `sfBUSD.js <command>` for BUSD
+	- node `sfBNB.js <command>` for BNB
+	- Or create your own: <br/>
 		`import StakeUtil from "./src/StakeUtil.js";`<br/>
 		`const stake = StakeUtil({ .... });`
 
@@ -67,6 +71,7 @@ The config file is a JSON object.  It's actually not necessary and you can skip 
 
  - **cmc_api_key**: Your CoinMarketCap API key, used for pricing
  - **getblock_key**: Your Get Block API key, used for alternative providers
+ - **owlracle_key**: Your Owlracle API key for estimating BNB gas fees
 
 ## Usage
 
@@ -117,7 +122,7 @@ To run the script, using commands:
 This assumes that you're calling your script like this:
    
 
-     node sfMatic.js command [arg1] [arg2]
+     node sfMatic.js <command> [arg1] [arg2]
 
 The list of available commands:
 
@@ -144,6 +149,20 @@ The list of available commands:
  - **approve**: For BUSD, preapprove token transfers.
 	 - arg: amount to approve or "max" for the maximum amount (effectively unlimited)
 
+## New Address Utility
+To create a new wallet you could use wallet software that exports a private key, or you can use the newAddress.js script included here.
+
+
+     node src/newAddress.js
+
+It outputs something like this:
+
+     Address: 0xA2CC....AAdF0
+	 Mnemonic: twelve word phrase you can store safely but not needed piano shrug
+	 Private Key: 0xbc3...4fef1
+
+Use the private key to configure the script.  Do not share.  If this never gets used on your computer, such as in a wallet browser extension, but instead stays on a dedicated device or cloud compute instance, then even if you slip up and click on a malicious link the hackers cannot get your private key **because it won't exist on your computer**.
+
 ## FAQ
 
 - Why does this script need my private key?
@@ -154,7 +173,7 @@ The list of available commands:
 	- I personally run the script on a [Raspberry Pi](https://www.raspberrypi.org/) not attached to my other computers. This means my private keys are not on my laptop or desktop computers.
 - Could I use my hardware wallet (i.e. Ledger)?
 	- No.
-	- Those require you to manually approve each transaction.  So, autocompounding does not fit into the paradign of using a hardware wallet.
+	- Those require you to manually approve each transaction and only storing your private keys on the device.  So, the kind of commands this script uses and autocompounding do not fit into the paradign of using a hardware wallet.
 - What's a good autocompounding strategy?
 	- Ask around.
 	- Common strategies are once per day, twice per day, or three times per day (once every 8 hours).
