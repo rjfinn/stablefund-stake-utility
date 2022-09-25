@@ -748,7 +748,7 @@ export default function StakeUtil(params) {
         if(tokenContract) {
             signedToken = tokenContract.connect(wallet);
         }
-        const capital = await withdrawByWallet(wallet, signedContract, signedToken);
+        const capital = await withdrawCapitalByWallet(wallet, signedContract, signedToken);
 
         return capital;
     }
@@ -758,7 +758,7 @@ export default function StakeUtil(params) {
         const deposits = await getDeposits(wallet.address);
 
         console.log('Withdraw from', wallet.address);
-        for (deposit of deposits) {
+        for (const deposit of deposits) {
             if (deposit.withdrawEligible) {
                 console.log('Withdraw deposit ID', deposit.id, ':', deposit.amount, symbol);
                 capital += await withdrawByDeposit_call(wallet, signedContract, deposit.id, signedToken);
