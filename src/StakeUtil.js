@@ -72,14 +72,14 @@ export default function StakeUtil(params) {
     const amountToLeave = params.amountToLeave ? params.amountToLeave : 2.0;  // should be non-zero or transactions won't go through
     const restakeRate = params.hasOwnProperty('restakeRate') ? params.restakeRate : 1.0;
     const minDeposit = params.hasOwnProperty('minDeposit') ? params.minDeposit : 10;
-    const checkBalanceRetrySeconds = params.checkBalanceRetrySeconds ? params.checkBalanceRetrySeconds : 5;
-    const checkBalanceRetryAttempts = params.checkBalanceRetryAttempts ? params.checkBalanceRetryAttempts : 100;
+    //const checkBalanceRetrySeconds = params.checkBalanceRetrySeconds ? params.checkBalanceRetrySeconds : 5;
+    //const checkBalanceRetryAttempts = params.checkBalanceRetryAttempts ? params.checkBalanceRetryAttempts : 100;
     const CMCAPIKey = params.CMCAPIKey ? params.CMCAPIKey : undefined;
     const moralisKey = params.moralisKey ? params.moralisKey : undefined;
     const coinAPIKey = params.coinAPIKey ? params.coinAPIKey : undefined;
     const approveEveryTxn = params.approveEveryTxn ? params.approveEveryTxn : false;
-    let depositCounts = {};
 
+    let depositCounts = {};
     let price = 0.0;
 
     const hoursToMS = (hrs) => {
@@ -156,7 +156,7 @@ export default function StakeUtil(params) {
     // for replanting and harvesting transactions
     const setGasFee = async () => {
         switch (normNetwork()) {
-            case "polygon": 
+            case "polygon":
                 await setGasFeePolygon();
                 break;
             case "bsc":
@@ -223,13 +223,13 @@ export default function StakeUtil(params) {
 
     const txnPrice = (limit = undefined) => {
         let options = {};
-        if(limit) {
+        if (limit) {
             options.gasLimit = limit;
         } else {
             options.gasLimit = gasLimit;
         }
         switch (normNetwork()) {
-            case "polygon": 
+            case "polygon":
                 options.maxPriorityFeePerGas = maxPriorityFeePerGas;
                 options.maxFeePerGas = maxFeePerGas;
                 break;
@@ -439,7 +439,7 @@ export default function StakeUtil(params) {
     const walletTransfer = async (fromIndex, toIndex) => {
         const fromWallet = new ethers.Wallet(walletConfig[fromIndex].private, provider);
         let toAddress = undefined;
-        if(walletConfig[toIndex]) {
+        if (walletConfig[toIndex]) {
             toAddress = walletConfig[toIndex].address;
         } else {
             toAddress = toIndex;
@@ -467,15 +467,15 @@ export default function StakeUtil(params) {
                 const preBalance = await getBalance(toAddress);
                 const walletSigner = wallet.connect(provider);
                 let signedToken = undefined;
-                if(tokenContract) {
+                if (tokenContract) {
                     signedToken = tokenContract.connect(wallet);
                 }
 
                 let options = txnPrice();
-                
+
                 let tx = undefined;
                 const xferAmount = String(ethers.utils.parseEther(amount.toString()));
-                if(signedToken) {
+                if (signedToken) {
                     tx = await signedToken.transfer(toAddress, xferAmount, options);
                 } else {
                     options.from = fromAddress;
@@ -486,23 +486,26 @@ export default function StakeUtil(params) {
 
                 console.log('TX Hash:', tx.hash);
 
-                let balance = 0.0;
-                let count = 0;
-                let checkBalance = preBalance + amount - amountToLeave;  // in case a lot used in xfer
-                do {
-                    await sleep(checkBalanceRetrySeconds * 1000);
-                    balance = await getBalance(toAddress);
-                    count += 1;
-                    console.log(count, 'Destination balance currently:', balance);
-                } while (balance < checkBalance && count <= checkBalanceRetryAttempts);
+                await tx.wait();
+                console.log('Transferred:', amount, symbol);
 
-                if (balance >= checkBalance) {
-                    console.log('Successfully transferred:', amount, symbol);
-                    if (scanURL) {
-                        console.log(`scan: ${scanURL}${tx.hash}`);
-                    }
-                    //console.log('TX Fee (Gas):', ethers.utils.formatEther(tx.gasLimit * tx.gasPrice), symbol, '\n');
-                }
+                // let balance = 0.0;
+                // let count = 0;
+                // let checkBalance = preBalance + amount - amountToLeave;  // in case a lot used in xfer
+                // do {
+                //     await sleep(checkBalanceRetrySeconds * 1000);
+                //     balance = await getBalance(toAddress);
+                //     count += 1;
+                //     console.log(count, 'Destination balance currently:', balance);
+                // } while (balance < checkBalance && count <= checkBalanceRetryAttempts);
+
+                // if (balance >= checkBalance) {
+                //     console.log('Successfully transferred:', amount, symbol);
+                //     if (scanURL) {
+                //         console.log(`scan: ${scanURL}${tx.hash}`);
+                //     }
+                //     //console.log('TX Fee (Gas):', ethers.utils.formatEther(tx.gasLimit * tx.gasPrice), symbol, '\n');
+                // }
             }
         } catch (err) {
             console.log("Could not transfer:", err);
@@ -531,7 +534,7 @@ export default function StakeUtil(params) {
                 gasLimit: gasLimit
             });
             console.log('Approved transfer of', amount, symbol);
-            console.log(`chainScan: ${chainScan}${approval.hash}`);
+            console.log(`Explorer: ${scanURL}${approval.hash}`);
             await sleep(1000);
         }
     }
@@ -548,7 +551,7 @@ export default function StakeUtil(params) {
         const wallet = new ethers.Wallet(key, provider);
         const signedContract = contract.connect(wallet);
         let signedToken = undefined;
-        if(tokenContract) {
+        if (tokenContract) {
             signedToken = tokenContract.connect(wallet);
         }
         await deposit(wallet, signedContract, 0, signedToken);
@@ -561,7 +564,7 @@ export default function StakeUtil(params) {
 
         let myBalance = await getBalance(wallet.address);
         console.log('Wallet balance:', myBalance);
-        
+
         if (amount <= 0.0) {
             xferAmount = Math.floor(myBalance) - amountToLeave;
         } else {
@@ -571,59 +574,66 @@ export default function StakeUtil(params) {
         console.log('Deposit amount:', xferAmount);
 
         if (xferAmount > minDeposit) {
-            const depositValue = String(ethers.utils.parseEther(xferAmount.toString()));
-            //const estimatedGas = await signedContract.estimateGas.deposit({ value: depositValue });
+            try {
+                const depositValue = String(ethers.utils.parseEther(xferAmount.toString()));
+                //const estimatedGas = await signedContract.estimateGas.deposit({ value: depositValue });
 
-            if(approveEveryTxn) {
-                await approve(signedToken, xferAmount);
-            }
-
-            const preBalance = myBalance;
-
-            let options = txnPrice();
-            let tx = undefined;
-            if(tokenContract) {
-                // the BUSD contract takes the deposit amount as a parameter
-                tx = await signedContract.deposit(depositValue, options);
-            } else {
-                // the native token (MATIC and BNB) contracts take the amount value in the msg/options object
-                options.value = depositValue;
-                tx = await signedContract.deposit(options);
-            }
-            console.log('TX Hash:', tx.hash);
-
-            let balance = 0.0;
-            let count = 0;
-            do {
-                await sleep(checkBalanceRetrySeconds * 1000);
-                balance = await getBalance(wallet.address);
-                count += 1;
-                console.log(count, 'Wallet balance currently:', balance);
-            } while (balance == preBalance && count <= checkBalanceRetryAttempts);
-
-            // console.log('balance',balance);
-            // console.log('preBalance',preBalance);
-            // console.log('xferAmount',xferAmount);
-            // console.log(balance > (preBalance - xferAmount))
-            if (count > checkBalanceRetryAttempts) {
-                console.log('Possible error with deposit');
-                const errTxn = await provider.getTransaction(tx.hash);
-                try {
-                    console.log(errTxn);
-                    // let code = await provider.call(errTxn, errTxn.blockNumber);
-                    // console.log(code);
-                } catch (err) {
-                    console.log(err);
-                    console.log(err.data.toString());
+                if (approveEveryTxn) {
+                    await approve(signedToken, xferAmount);
                 }
-            } else {
+
+                //const preBalance = myBalance;
+
+                let options = txnPrice();
+                let tx = undefined;
+                if (tokenContract) {
+                    // the BUSD contract takes the deposit amount as a parameter
+                    tx = await signedContract.deposit(depositValue, options);
+                } else {
+                    // the native token (MATIC and BNB) contracts take the amount value in the msg/options object
+                    options.value = depositValue;
+                    tx = await signedContract.deposit(options);
+                }
+                console.log('TX Hash:', tx.hash);
+
+                await tx.wait();
                 console.log('Deposited:', xferAmount, symbol);
-                if (scanURL) {
-                    console.log(`Scan: ${scanURL}${tx.hash}`);
-                }
-
-                //console.log('TX Fee (Gas):', ethers.utils.formatEther(tx.gasLimit * tx.gasPrice), symbol, '\n');
+            } catch (err) {
+                console.log('Error depositing:', err);
             }
+
+            // let balance = 0.0;
+            // let count = 0;
+            // do {
+            //     await sleep(checkBalanceRetrySeconds * 1000);
+            //     balance = await getBalance(wallet.address);
+            //     count += 1;
+            //     console.log(count, 'Wallet balance currently:', balance);
+            // } while (balance == preBalance && count <= checkBalanceRetryAttempts);
+
+            // // console.log('balance',balance);
+            // // console.log('preBalance',preBalance);
+            // // console.log('xferAmount',xferAmount);
+            // // console.log(balance > (preBalance - xferAmount))
+            // if (count > checkBalanceRetryAttempts) {
+            //     console.log('Possible error with deposit');
+            //     const errTxn = await provider.getTransaction(tx.hash);
+            //     try {
+            //         console.log(errTxn);
+            //         // let code = await provider.call(errTxn, errTxn.blockNumber);
+            //         // console.log(code);
+            //     } catch (err) {
+            //         console.log(err);
+            //         console.log(err.data.toString());
+            //     }
+            // } else {
+            //     console.log('Deposited:', xferAmount, symbol);
+            //     if (scanURL) {
+            //         console.log(`Scan: ${scanURL}${tx.hash}`);
+            //     }
+
+            //     //console.log('TX Fee (Gas):', ethers.utils.formatEther(tx.gasLimit * tx.gasPrice), symbol, '\n');
+            // }
         } else {
             console.log('Tranfer amount too low.');
         }
@@ -642,7 +652,7 @@ export default function StakeUtil(params) {
 
     const claimRewardsByWallet = async (wallet, signedContract, rewards = undefined) => {
         try {
-            console.log('\nClaim rewards for ',wallet.address);
+            console.log('\nClaim rewards for ', wallet.address);
             if (!rewards) {
                 const rawRewards = await contract.getAllClaimableReward(wallet.address);
                 rewards = Number(parseFloat(ethers.utils.formatEther(rawRewards)));
@@ -650,26 +660,28 @@ export default function StakeUtil(params) {
 
             const preBalance = await getBalance(wallet.address);
             //console.log('claim',rewards.toString());
-            if(rewards < compoundMin) {
+            if (rewards < compoundMin) {
                 console.log(`Rewards too low to claim for now: ${rewards} vs. min. required of ${compoundMin}`);
                 return 0;
             }
             const estimatedGas = await signedContract.estimateGas.claimAllReward();
 
             let options = txnPrice(estimatedGas.mul(12).div(10));
-            
+
             const tx = await signedContract.claimAllReward(options);
             //console.log(tx);
             console.log('TX Hash:', tx.hash);
 
-            let balance = 0.0;
-            let count = 0;
-            do {
-                await sleep(checkBalanceRetrySeconds * 1000);
-                balance = await getBalance(wallet.address);
-                count += 1;
-                console.log(count, 'Wallet balance currently:', balance);
-            } while (balance == preBalance && count <= checkBalanceRetryAttempts);
+            await tx.wait();
+
+            // let balance = 0.0;
+            // let count = 0;
+            // do {
+            //     await sleep(checkBalanceRetrySeconds * 1000);
+            //     balance = await getBalance(wallet.address);
+            //     count += 1;
+            //     console.log(count, 'Wallet balance currently:', balance);
+            // } while (balance == preBalance && count <= checkBalanceRetryAttempts);
 
             console.log('Claimed:', rewards, symbol);
             if (scanURL) {
@@ -725,7 +737,7 @@ export default function StakeUtil(params) {
             }
         })();
 
-        if(confirm) {
+        if (confirm) {
             for await (const [key, value] of Object.entries(walletConfig)) {
                 capital += await withdrawCapitalByKey(value.private);
             }
@@ -745,7 +757,7 @@ export default function StakeUtil(params) {
         const signedContract = contract.connect(wallet);
         //const signedContract = new ethers.Contract(contractAddress, abi, watchSigner);
         let signedToken = undefined;
-        if(tokenContract) {
+        if (tokenContract) {
             signedToken = tokenContract.connect(wallet);
         }
         const capital = await withdrawCapitalByWallet(wallet, signedContract, signedToken);
@@ -787,7 +799,7 @@ export default function StakeUtil(params) {
             // TODO: deposit itself vs depositID, check age
             let amount = Number(ethers.utils.formatEther(deposit.depositAmount));
             let rawReward = 0;
-            if(tokenContract) {
+            if (tokenContract) {
                 rawReward = await contract.getAllClaimableReward(wallet.address);
             } else {
                 rawReward = await contract.getClaimableReward(depositID.toString());
@@ -802,26 +814,29 @@ export default function StakeUtil(params) {
             const tx = await signedContract.withdrawCapital(depositID, options);
             console.log('TX Hash:', tx.hash);
 
-            // wait for the rewards to show up in the wallet
-            let count = 0;
-            do {
-                await sleep(checkBalanceRetrySeconds * 1000);
-                balance = await getBalance(wallet.address);
-                count += 1;
-                console.log(count, 'Balance currently:', balance);
-            } while (count <= checkBalanceRetryAttempts && balance < (preBalance + total - amountToLeave));
+            await tx.wait();
+            console.log('Withdrew:', total, symbol);
 
-            if (balance >= (preBalance + total - amountToLeave)) {
-                console.log('Successfully withdrew:', total, symbol);
-                if (scanURL) {
-                    console.log(`scan: ${scanURL}${tx.hash}`);
-                }
-                //console.log('TX Fee (Gas):', ethers.utils.formatEther(tx.gasLimit * tx.gasPrice), symbol, '\n');
+            // // wait for the rewards to show up in the wallet
+            // let count = 0;
+            // do {
+            //     await sleep(checkBalanceRetrySeconds * 1000);
+            //     balance = await getBalance(wallet.address);
+            //     count += 1;
+            //     console.log(count, 'Balance currently:', balance);
+            // } while (count <= checkBalanceRetryAttempts && balance < (preBalance + total - amountToLeave));
 
-                // if (xferWallet && xferWallet != wallet.address) {
-                //     await transfer(wallet, xferWallet, balance - amountToLeave);
-                // }
-            }
+            // if (balance >= (preBalance + total - amountToLeave)) {
+            //     console.log('Successfully withdrew:', total, symbol);
+            //     if (scanURL) {
+            //         console.log(`scan: ${scanURL}${tx.hash}`);
+            //     }
+            //     //console.log('TX Fee (Gas):', ethers.utils.formatEther(tx.gasLimit * tx.gasPrice), symbol, '\n');
+
+            //     // if (xferWallet && xferWallet != wallet.address) {
+            //     //     await transfer(wallet, xferWallet, balance - amountToLeave);
+            //     // }
+            // }
 
             return amount;
         } catch (err) {
@@ -835,7 +850,7 @@ export default function StakeUtil(params) {
         const wallet = new ethers.Wallet(key, provider);
         const signedContract = contract.connect(wallet);
         let signedToken = undefined;
-        if(tokenContract) {
+        if (tokenContract) {
             signedToken = tokenContract.connect(wallet);
         }
 
@@ -844,37 +859,58 @@ export default function StakeUtil(params) {
         const rawRewards = await contract.getAllClaimableReward(wallet.address);
         //console.log('rawRewards',rawRewards);
         let rewards = Number(parseFloat(ethers.utils.formatEther(rawRewards)));
-        let balance = 0;
+        let balance = await getBalance(wallet.address);
         //console.log('rewards',rewards);
-        if (rewards - amountToLeave >= compoundMin) {
-            const preBalance = await getBalance(wallet.address);
+        if ((rewards - amountToLeave) >= compoundMin) {
+            //const preBalance = await getBalance(wallet.address);
             //console.log('prebalance',preBalance);
             const claimed = await claimRewardsByWallet(wallet, signedContract, rewards);
             //console.log('after claiming rewards',claimed);
 
             if (claimed) {
-                // wait for the rewards to show up in the wallet
-                let count = 0;
-                do {
-                    await sleep(checkBalanceRetrySeconds * 1000);
-                    balance = await getBalance(wallet.address);
-                    count += 1;
-                    console.log(count, 'Balance currently:', balance);
-                } while (count <= checkBalanceRetryAttempts && balance < (preBalance + rewards - amountToLeave));
-
-                if (balance >= (preBalance + rewards - amountToLeave)) {
-                    let depAmount = (Math.floor(balance) * restakeRate) - amountToLeave;
-                    if (depAmount >= minDeposit) {
-                        await deposit(wallet, signedContract, depAmount, signedToken);
-                    }
-
-                    if (restakeRate < 1) {
-                        await transfer(wallet, xferWallet, Math.floor(balance) * (1 - restakeRate) - amountToLeave);
-                    }
-                } else {
-                    console.log('Timed out.');
-                    return;
+                balance = await getBalance(wallet.address);
+                let depAmount = (Math.floor(balance) * restakeRate) - amountToLeave;
+                if (depAmount >= minDeposit) {
+                    await deposit(wallet, signedContract, depAmount, signedToken);
                 }
+
+                if (restakeRate < 1) {
+                    await transfer(wallet, xferWallet, Math.floor(balance) * (1 - restakeRate) - amountToLeave);
+                }
+
+                // if (restakeRate < 1) {
+                //     await transfer(wallet, xferWallet, Math.floor(balance) * (1 - restakeRate) - amountToLeave);
+                //     balance = await getBalance(wallet.address);
+                // }
+
+                // let depAmount = (Math.floor(balance) * restakeRate) - amountToLeave;
+                // //console.log('Deposit amount:',depAmount);
+                // if (depAmount >= minDeposit) {
+                //     await deposit(wallet, signedContract, depAmount, signedToken);
+                // }
+
+                // // wait for the rewards to show up in the wallet
+                // let count = 0;
+                // do {
+                //     await sleep(checkBalanceRetrySeconds * 1000);
+                //     balance = await getBalance(wallet.address);
+                //     count += 1;
+                //     console.log(count, 'Balance currently:', balance);
+                // } while (count <= checkBalanceRetryAttempts && balance < (preBalance + rewards - amountToLeave));
+
+                // if (balance >= (preBalance + rewards - amountToLeave)) {
+                //     let depAmount = (Math.floor(balance) * restakeRate) - amountToLeave;
+                //     if (depAmount >= minDeposit) {
+                //         await deposit(wallet, signedContract, depAmount, signedToken);
+                //     }
+
+                //     if (restakeRate < 1) {
+                //         await transfer(wallet, xferWallet, Math.floor(balance) * (1 - restakeRate) - amountToLeave);
+                //     }
+                // } else {
+                //     console.log('Timed out.');
+                //     return;
+                // }
             } else {
                 console.log('Reward claim of', Number(rewards.toFixed(2)), 'failed.');
             }
