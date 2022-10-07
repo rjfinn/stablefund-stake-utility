@@ -2,6 +2,7 @@
 .vscode/
 conf/config.json
 conf/config-raw.json
+conf/config.bak
 package-lock.json
 
 # Logs

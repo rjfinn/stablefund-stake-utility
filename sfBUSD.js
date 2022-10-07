@@ -24,7 +24,7 @@ const stake = StakeUtil({
     //WSSProvider:        'wss://bsc.getblock.io/mainnet/?api_key=' + config.getblock_key,
     gasPremium:         0,
     gasStation:         'https://owlracle.info/bsc/gas?apikey='+config.owlracle_key,
-    maxGasFeeForAuto:   20,
+    maxGasFeeForAuto:   30,
     compoundsPerDay:    config[siteName].compounds_per_day ? config[siteName].compounds_per_day : 1,
     compoundMin:        config[siteName].compound_min ? config[siteName].compound_min : 0.0,
     checkBalanceRetrySeconds:   5,

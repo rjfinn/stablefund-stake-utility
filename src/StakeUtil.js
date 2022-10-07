@@ -576,20 +576,28 @@ export default function StakeUtil(params) {
         if (xferAmount > minDeposit) {
             try {
                 const depositValue = String(ethers.utils.parseEther(xferAmount.toString()));
-                //const estimatedGas = await signedContract.estimateGas.deposit({ value: depositValue });
-
+                let estimatedGas, useGasLimit, options, tx = undefined;
+                
                 if (approveEveryTxn) {
                     await approve(signedToken, xferAmount);
                 }
 
-                //const preBalance = myBalance;
-
-                let options = txnPrice();
-                let tx = undefined;
                 if (tokenContract) {
+                    estimatedGas = await signedContract.estimateGas.deposit(depositValue);
+                    useGasLimit = gasLimit;
+                    if(estimatedGas.toString() > gasLimit.toString()) {
+                        useGasLimit = estimatedGas;
+                    }
+                    options = txnPrice(useGasLimit);
                     // the BUSD contract takes the deposit amount as a parameter
                     tx = await signedContract.deposit(depositValue, options);
                 } else {
+                    estimatedGas = await signedContract.estimateGas.deposit({ value: depositValue });
+                    useGasLimit = gasLimit;
+                    if(estimatedGas.toString() > gasLimit.toString()) {
+                        useGasLimit = estimatedGas;
+                    }
+                    options = txnPrice(useGasLimit);
                     // the native token (MATIC and BNB) contracts take the amount value in the msg/options object
                     options.value = depositValue;
                     tx = await signedContract.deposit(options);
