@@ -82,3 +82,5 @@ typings/
 src/autoStablefund.js
 src/autoStablefundBUSD.js
 src/newAddress.cjs
+test.js
+conf/config copy.json

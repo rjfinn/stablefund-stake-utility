@@ -11,7 +11,10 @@
   "author": "Richard Finn",
   "license": "ISC",
   "dependencies": {
+    "@ethersproject/hardware-wallets": "^5.7.0",
+    "@ledgerhq/hw-transport-node-hid": "^6.27.6",
     "@tsmx/secure-config": "^2.0.0",
+    "babel-polyfill": "^6.26.0",
     "ethers": "^5.6.9",
     "got": "^12.3.1",
     "moment": "^2.29.4"

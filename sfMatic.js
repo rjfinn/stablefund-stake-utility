@@ -23,7 +23,7 @@ const stake = StakeUtil({
     gasPremium:         0,
     gasStation:         'https://gasstation-mainnet.matic.network/v2',
     gasPriority:        'standard',  // safeLow, standard, fast
-    maxGasFeeForAuto:   100,
+    maxGasFeeForAuto:   150,
     compoundsPerDay:    config[siteName].compounds_per_day ? config[siteName].compounds_per_day : 1,
     compoundMin:        config[siteName].compound_min ? config[siteName].compound_min : 0.0,
     checkBalanceRetrySeconds:   5,
