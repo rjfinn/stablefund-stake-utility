@@ -1,3 +1,4 @@
+.DS_Store
 .env
 .vscode/
 conf/config.json
@@ -84,3 +85,4 @@ src/autoStablefundBUSD.js
 src/newAddress.cjs
 test.js
 conf/config copy.json
+sfSFUSD2.js
