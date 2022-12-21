@@ -9,8 +9,8 @@ import { abi20 } from "./abi/bep20.js";
 import { LedgerSigner } from "@ethersproject/hardware-wallets";
 
 export default function StakeUtil(params) {
-    const expectedDailyReturn = 0.015; // rate in decimal
-    const withdrawEligibleAge = 28; // days
+    const expectedDailyReturn = 0.01; // rate in decimal updated for v2 
+    const withdrawEligibleAge = 63; // days updated for v2
 
     const walletConfig = params.walletConfig ? params.walletConfig : {};
     if (Object.keys(walletConfig).length === 0) {

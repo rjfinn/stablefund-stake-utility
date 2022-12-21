@@ -1,0 +1,687 @@
+export const abi = [{
+    "inputs": [{
+        "internalType": "address",
+        "name": "_devAddress",
+        "type": "address"
+    }, {
+        "internalType": "uint256",
+        "name": "_startDate",
+        "type": "uint256"
+    }],
+    "stateMutability": "nonpayable",
+    "type": "constructor"
+}, {
+    "anonymous": false,
+    "inputs": [{
+        "indexed": false,
+        "internalType": "address",
+        "name": "investor",
+        "type": "address"
+    }, {
+        "indexed": false,
+        "internalType": "uint256",
+        "name": "amount",
+        "type": "uint256"
+    }, {
+        "indexed": false,
+        "internalType": "uint256",
+        "name": "id",
+        "type": "uint256"
+    }, {
+        "indexed": false,
+        "internalType": "uint256",
+        "name": "time",
+        "type": "uint256"
+    }],
+    "name": "CapitalWithdrawn",
+    "type": "event"
+}, {
+    "anonymous": false,
+    "inputs": [{
+        "indexed": false,
+        "internalType": "address",
+        "name": "investor",
+        "type": "address"
+    }, {
+        "indexed": false,
+        "internalType": "uint256",
+        "name": "amount",
+        "type": "uint256"
+    }, {
+        "indexed": false,
+        "internalType": "uint256",
+        "name": "time",
+        "type": "uint256"
+    }],
+    "name": "ClaimedReward",
+    "type": "event"
+}, {
+    "anonymous": false,
+    "inputs": [{
+        "indexed": false,
+        "internalType": "address",
+        "name": "investor",
+        "type": "address"
+    }, {
+        "indexed": false,
+        "internalType": "uint256",
+        "name": "amount",
+        "type": "uint256"
+    }, {
+        "indexed": false,
+        "internalType": "uint256",
+        "name": "time",
+        "type": "uint256"
+    }],
+    "name": "NewInvestment",
+    "type": "event"
+}, {
+    "anonymous": false,
+    "inputs": [{
+        "indexed": false,
+        "internalType": "address",
+        "name": "investor",
+        "type": "address"
+    }, {
+        "indexed": false,
+        "internalType": "uint256",
+        "name": "amount",
+        "type": "uint256"
+    }, {
+        "indexed": false,
+        "internalType": "uint256",
+        "name": "time",
+        "type": "uint256"
+    }],
+    "name": "NewInvestor",
+    "type": "event"
+}, {
+    "anonymous": false,
+    "inputs": [{
+        "indexed": true,
+        "internalType": "address",
+        "name": "previousOwner",
+        "type": "address"
+    }, {
+        "indexed": true,
+        "internalType": "address",
+        "name": "newOwner",
+        "type": "address"
+    }],
+    "name": "OwnershipTransferred",
+    "type": "event"
+}, {
+    "inputs": [],
+    "name": "COOLDOWN_PERIOD",
+    "outputs": [{
+        "internalType": "uint256",
+        "name": "",
+        "type": "uint256"
+    }],
+    "stateMutability": "view",
+    "type": "function"
+}, {
+    "inputs": [],
+    "name": "DAILY_ROI",
+    "outputs": [{
+        "internalType": "uint256",
+        "name": "",
+        "type": "uint256"
+    }],
+    "stateMutability": "view",
+    "type": "function"
+}, {
+    "inputs": [],
+    "name": "DEPOSIT_FEE",
+    "outputs": [{
+        "internalType": "uint256",
+        "name": "",
+        "type": "uint256"
+    }],
+    "stateMutability": "view",
+    "type": "function"
+}, {
+    "inputs": [],
+    "name": "DEPOSIT_LIMIT",
+    "outputs": [{
+        "internalType": "uint256",
+        "name": "",
+        "type": "uint256"
+    }],
+    "stateMutability": "view",
+    "type": "function"
+}, {
+    "inputs": [],
+    "name": "LOCKED_PERIOD",
+    "outputs": [{
+        "internalType": "uint256",
+        "name": "",
+        "type": "uint256"
+    }],
+    "stateMutability": "view",
+    "type": "function"
+}, {
+    "inputs": [],
+    "name": "SFUSDaddress",
+    "outputs": [{
+        "internalType": "address",
+        "name": "",
+        "type": "address"
+    }],
+    "stateMutability": "view",
+    "type": "function"
+}, {
+    "inputs": [],
+    "name": "TOTAL_PERCENTAGE",
+    "outputs": [{
+        "internalType": "uint256",
+        "name": "",
+        "type": "uint256"
+    }],
+    "stateMutability": "view",
+    "type": "function"
+}, {
+    "inputs": [],
+    "name": "capitalLockedPool",
+    "outputs": [{
+        "internalType": "uint256",
+        "name": "",
+        "type": "uint256"
+    }],
+    "stateMutability": "view",
+    "type": "function"
+}, {
+    "inputs": [],
+    "name": "capitalWithdrawn",
+    "outputs": [{
+        "internalType": "uint256",
+        "name": "",
+        "type": "uint256"
+    }],
+    "stateMutability": "view",
+    "type": "function"
+}, {
+    "inputs": [],
+    "name": "claimRewards",
+    "outputs": [],
+    "stateMutability": "nonpayable",
+    "type": "function"
+}, {
+    "inputs": [],
+    "name": "contractClosed",
+    "outputs": [{
+        "internalType": "bool",
+        "name": "",
+        "type": "bool"
+    }],
+    "stateMutability": "view",
+    "type": "function"
+}, {
+    "inputs": [],
+    "name": "currentDepositID",
+    "outputs": [{
+        "internalType": "uint256",
+        "name": "",
+        "type": "uint256"
+    }],
+    "stateMutability": "view",
+    "type": "function"
+}, {
+    "inputs": [{
+        "internalType": "uint256",
+        "name": "_amount",
+        "type": "uint256"
+    }],
+    "name": "deposit",
+    "outputs": [],
+    "stateMutability": "nonpayable",
+    "type": "function"
+}, {
+    "inputs": [{
+        "internalType": "uint256",
+        "name": "_amount",
+        "type": "uint256"
+    }],
+    "name": "depositInRewardPool",
+    "outputs": [],
+    "stateMutability": "nonpayable",
+    "type": "function"
+}, {
+    "inputs": [{
+        "internalType": "uint256",
+        "name": "",
+        "type": "uint256"
+    }],
+    "name": "depositState",
+    "outputs": [{
+        "internalType": "address",
+        "name": "investor",
+        "type": "address"
+    }, {
+        "internalType": "uint256",
+        "name": "depositAmount",
+        "type": "uint256"
+    }, {
+        "internalType": "uint256",
+        "name": "depositAt",
+        "type": "uint256"
+    }, {
+        "internalType": "uint256",
+        "name": "pocketInvestment",
+        "type": "uint256"
+    }, {
+        "internalType": "uint256",
+        "name": "compoundedInvestment",
+        "type": "uint256"
+    }, {
+        "internalType": "bool",
+        "name": "state",
+        "type": "bool"
+    }, {
+        "internalType": "bool",
+        "name": "migratedInvestment",
+        "type": "bool"
+    }],
+    "stateMutability": "view",
+    "type": "function"
+}, {
+    "inputs": [{
+        "internalType": "address",
+        "name": "",
+        "type": "address"
+    }],
+    "name": "depositsLength",
+    "outputs": [{
+        "internalType": "uint256",
+        "name": "",
+        "type": "uint256"
+    }],
+    "stateMutability": "view",
+    "type": "function"
+}, {
+    "inputs": [],
+    "name": "devAddress",
+    "outputs": [{
+        "internalType": "address",
+        "name": "",
+        "type": "address"
+    }],
+    "stateMutability": "view",
+    "type": "function"
+}, {
+    "inputs": [{
+        "internalType": "address",
+        "name": "_investorAddress",
+        "type": "address"
+    }],
+    "name": "getAllClaimableReward",
+    "outputs": [{
+        "internalType": "uint256",
+        "name": "allClaimableAmount",
+        "type": "uint256"
+    }],
+    "stateMutability": "view",
+    "type": "function"
+}, {
+    "inputs": [{
+        "internalType": "uint256",
+        "name": "_id",
+        "type": "uint256"
+    }],
+    "name": "getClaimableReward",
+    "outputs": [{
+        "internalType": "uint256",
+        "name": "reward",
+        "type": "uint256"
+    }],
+    "stateMutability": "view",
+    "type": "function"
+}, {
+    "inputs": [{
+        "internalType": "uint256",
+        "name": "_id",
+        "type": "uint256"
+    }],
+    "name": "getDepositState",
+    "outputs": [{
+        "internalType": "address",
+        "name": "investor",
+        "type": "address"
+    }, {
+        "internalType": "uint256",
+        "name": "depositAmount",
+        "type": "uint256"
+    }, {
+        "internalType": "uint256",
+        "name": "depositAt",
+        "type": "uint256"
+    }, {
+        "internalType": "uint256",
+        "name": "claimedAmount",
+        "type": "uint256"
+    }, {
+        "internalType": "bool",
+        "name": "state",
+        "type": "bool"
+    }, {
+        "internalType": "uint256",
+        "name": "pocketInvestment",
+        "type": "uint256"
+    }, {
+        "internalType": "uint256",
+        "name": "compoundedInvestment",
+        "type": "uint256"
+    }],
+    "stateMutability": "view",
+    "type": "function"
+}, {
+    "inputs": [{
+        "internalType": "address",
+        "name": "_investorAddress",
+        "type": "address"
+    }],
+    "name": "getInvestor",
+    "outputs": [{
+        "internalType": "address",
+        "name": "investor",
+        "type": "address"
+    }, {
+        "internalType": "uint256",
+        "name": "startTime",
+        "type": "uint256"
+    }, {
+        "internalType": "uint256",
+        "name": "lastCalculationDate",
+        "type": "uint256"
+    }, {
+        "internalType": "uint256",
+        "name": "nextClaimDate",
+        "type": "uint256"
+    }, {
+        "internalType": "uint256",
+        "name": "claimableAmount",
+        "type": "uint256"
+    }, {
+        "internalType": "uint256",
+        "name": "claimedAmount",
+        "type": "uint256"
+    }, {
+        "internalType": "uint256",
+        "name": "totalRewardAmount",
+        "type": "uint256"
+    }, {
+        "internalType": "uint256",
+        "name": "pocketInvestment",
+        "type": "uint256"
+    }],
+    "stateMutability": "view",
+    "type": "function"
+}, {
+    "inputs": [{
+        "internalType": "address",
+        "name": "investor",
+        "type": "address"
+    }],
+    "name": "getOwnedDeposits",
+    "outputs": [{
+        "internalType": "uint256[]",
+        "name": "",
+        "type": "uint256[]"
+    }],
+    "stateMutability": "view",
+    "type": "function"
+}, {
+    "inputs": [{
+        "internalType": "address",
+        "name": "",
+        "type": "address"
+    }],
+    "name": "investors",
+    "outputs": [{
+        "internalType": "address",
+        "name": "investor",
+        "type": "address"
+    }, {
+        "internalType": "uint256",
+        "name": "startTime",
+        "type": "uint256"
+    }, {
+        "internalType": "uint256",
+        "name": "claimedAmount",
+        "type": "uint256"
+    }, {
+        "internalType": "uint256",
+        "name": "lastCalculationDate",
+        "type": "uint256"
+    }, {
+        "internalType": "uint256",
+        "name": "nextClaimDate",
+        "type": "uint256"
+    }, {
+        "internalType": "uint256",
+        "name": "totalRewardAmount",
+        "type": "uint256"
+    }, {
+        "internalType": "uint256",
+        "name": "pocketInvestment",
+        "type": "uint256"
+    }],
+    "stateMutability": "view",
+    "type": "function"
+}, {
+    "inputs": [{
+        "internalType": "address",
+        "name": "",
+        "type": "address"
+    }],
+    "name": "isAdmin",
+    "outputs": [{
+        "internalType": "bool",
+        "name": "",
+        "type": "bool"
+    }],
+    "stateMutability": "view",
+    "type": "function"
+}, {
+    "inputs": [],
+    "name": "isPause",
+    "outputs": [{
+        "internalType": "bool",
+        "name": "",
+        "type": "bool"
+    }],
+    "stateMutability": "view",
+    "type": "function"
+}, {
+    "inputs": [{
+        "internalType": "address",
+        "name": "_investor",
+        "type": "address"
+    }, {
+        "internalType": "uint256",
+        "name": "_amount",
+        "type": "uint256"
+    }, {
+        "internalType": "uint256",
+        "name": "_depositAt",
+        "type": "uint256"
+    }],
+    "name": "migrateInvestorToV2",
+    "outputs": [],
+    "stateMutability": "nonpayable",
+    "type": "function"
+}, {
+    "inputs": [],
+    "name": "multiSigWallet",
+    "outputs": [{
+        "internalType": "address",
+        "name": "",
+        "type": "address"
+    }],
+    "stateMutability": "view",
+    "type": "function"
+}, {
+    "inputs": [{
+        "internalType": "address",
+        "name": "",
+        "type": "address"
+    }, {
+        "internalType": "uint256",
+        "name": "",
+        "type": "uint256"
+    }],
+    "name": "ownedDeposits",
+    "outputs": [{
+        "internalType": "uint256",
+        "name": "",
+        "type": "uint256"
+    }],
+    "stateMutability": "view",
+    "type": "function"
+}, {
+    "inputs": [],
+    "name": "owner",
+    "outputs": [{
+        "internalType": "address",
+        "name": "",
+        "type": "address"
+    }],
+    "stateMutability": "view",
+    "type": "function"
+}, {
+    "inputs": [{
+        "internalType": "address",
+        "name": "_investor",
+        "type": "address"
+    }],
+    "name": "removeInvestor",
+    "outputs": [],
+    "stateMutability": "nonpayable",
+    "type": "function"
+}, {
+    "inputs": [],
+    "name": "renounceOwnership",
+    "outputs": [],
+    "stateMutability": "nonpayable",
+    "type": "function"
+}, {
+    "inputs": [],
+    "name": "rewardPool",
+    "outputs": [{
+        "internalType": "uint256",
+        "name": "",
+        "type": "uint256"
+    }],
+    "stateMutability": "view",
+    "type": "function"
+}, {
+    "inputs": [{
+        "internalType": "bool",
+        "name": "_contractClosed",
+        "type": "bool"
+    }],
+    "name": "setContractClosed",
+    "outputs": [],
+    "stateMutability": "nonpayable",
+    "type": "function"
+}, {
+    "inputs": [{
+        "internalType": "address",
+        "name": "_devAddress",
+        "type": "address"
+    }],
+    "name": "setDevAddress",
+    "outputs": [],
+    "stateMutability": "nonpayable",
+    "type": "function"
+}, {
+    "inputs": [{
+        "internalType": "address",
+        "name": "_walletAddress",
+        "type": "address"
+    }, {
+        "internalType": "bool",
+        "name": "adminStatus",
+        "type": "bool"
+    }],
+    "name": "setIsAdmin",
+    "outputs": [],
+    "stateMutability": "nonpayable",
+    "type": "function"
+}, {
+    "inputs": [{
+        "internalType": "bool",
+        "name": "_isPause",
+        "type": "bool"
+    }],
+    "name": "setPause",
+    "outputs": [],
+    "stateMutability": "nonpayable",
+    "type": "function"
+}, {
+    "inputs": [],
+    "name": "startDate",
+    "outputs": [{
+        "internalType": "uint256",
+        "name": "",
+        "type": "uint256"
+    }],
+    "stateMutability": "view",
+    "type": "function"
+}, {
+    "inputs": [],
+    "name": "totalInvested",
+    "outputs": [{
+        "internalType": "uint256",
+        "name": "",
+        "type": "uint256"
+    }],
+    "stateMutability": "view",
+    "type": "function"
+}, {
+    "inputs": [],
+    "name": "totalInvestors",
+    "outputs": [{
+        "internalType": "uint256",
+        "name": "",
+        "type": "uint256"
+    }],
+    "stateMutability": "view",
+    "type": "function"
+}, {
+    "inputs": [],
+    "name": "totalReward",
+    "outputs": [{
+        "internalType": "uint256",
+        "name": "",
+        "type": "uint256"
+    }],
+    "stateMutability": "view",
+    "type": "function"
+}, {
+    "inputs": [{
+        "internalType": "address",
+        "name": "newOwner",
+        "type": "address"
+    }],
+    "name": "transferOwnership",
+    "outputs": [],
+    "stateMutability": "nonpayable",
+    "type": "function"
+}, {
+    "inputs": [{
+        "internalType": "uint256",
+        "name": "id",
+        "type": "uint256"
+    }],
+    "name": "withdrawCapital",
+    "outputs": [],
+    "stateMutability": "nonpayable",
+    "type": "function"
+}, {
+    "inputs": [],
+    "name": "withdrawPocketInvestment",
+    "outputs": [],
+    "stateMutability": "nonpayable",
+    "type": "function"
+}]
